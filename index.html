@@ -818,12 +818,19 @@
 
                 <div class="form-group">
                     <label>Nombre Completo</label>
-                    <input type="text" id="nombre" placeholder="Nombre del visitante" required>
+                    <input type="text" id="nombre" placeholder="Nombre del visitante" required list="nombreList">
+                    <datalist id="nombreList"></datalist>
+                </div>
+
+                <div class="form-group" id="dniGroup">
+                    <label>DNI / Documento</label>
+                    <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList">
+                    <datalist id="dniList"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label>Movilidad</label>
-                    <select id="movilidad" required onchange="toggleDniField()">
+                    <select id="movilidad" required >
                         <option value="">Seleccionar...</option>
                         <option value="Peatón">🚶 Peatón</option>
                         <option value="Vehículo particular">🚗 Vehículo particular</option>
@@ -834,24 +841,22 @@
                     </select>
                 </div>
 
-                <div class="form-group dni-hidden" id="dniGroup">
-                    <label>DNI / Documento</label>
-                    <input type="text" id="dni" placeholder="Número de DNI o documento">
-                </div>
-
                 <div class="form-group">
                     <label>Placa</label>
-                    <input type="text" id="placa" placeholder="Placa del vehículo">
+                    <input type="text" id="placa" placeholder="Placa del vehículo" list="placaList">
+                    <datalist id="placaList"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label>¿A quién visita?</label>
-                    <input type="text" id="aQuienVisita" placeholder="Nombre de la persona o área" required>
+                    <input type="text" id="aQuienVisita" placeholder="Nombre de la persona o área" required list="aquienList">
+                    <datalist id="aquienList"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label>¿Quién autoriza?</label>
-                    <input type="text" id="quienAutoriza" placeholder="Nombre de quien autoriza el ingreso" required>
+                    <input type="text" id="quienAutoriza" placeholder="Nombre de quien autoriza el ingreso" required list="autorizaList">
+                    <datalist id="autorizaList"></datalist>
                 </div>
 
                 <div class="form-group">
@@ -943,11 +948,17 @@
                 </div>
                 <div class="form-group">
                     <label>Nombre</label>
-                    <input type="text" id="editNombre" required>
+                    <input type="text" id="editNombre" required list="editNombreList">
+                    <datalist id="editNombreList"></datalist>
+                </div>
+                <div class="form-group" id="editDniGroup">
+                    <label>DNI / Documento</label>
+                    <input type="text" id="editDni" placeholder="Número de DNI o documento" required list="editDniList">
+                    <datalist id="editDniList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Movilidad</label>
-                    <select id="editMovilidad" required onchange="toggleEditDniField()">
+                    <select id="editMovilidad" required >
                         <option value="Peatón">🚶 Peatón</option>
                         <option value="Vehículo particular">🚗 Vehículo particular</option>
                         <option value="Moto">🏍️ Moto</option>
@@ -956,21 +967,20 @@
                         <option value="Bicicleta">🚲 Bicicleta</option>
                     </select>
                 </div>
-                <div class="form-group dni-hidden" id="editDniGroup">
-                    <label>DNI / Documento</label>
-                    <input type="text" id="editDni" placeholder="Número de DNI o documento">
-                </div>
                 <div class="form-group">
                     <label>Placa</label>
-                    <input type="text" id="editPlaca">
+                    <input type="text" id="editPlaca" list="editPlacaList">
+                    <datalist id="editPlacaList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>¿A quién visita?</label>
-                    <input type="text" id="editAQuienVisita" required>
+                    <input type="text" id="editAQuienVisita" required list="editAquienList">
+                    <datalist id="editAquienList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>¿Quién autoriza?</label>
-                    <input type="text" id="editQuienAutoriza" required>
+                    <input type="text" id="editQuienAutoriza" required list="editAutorizaList">
+                    <datalist id="editAutorizaList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Observaciones</label>
@@ -1058,39 +1068,42 @@
             const now = new Date();
             document.getElementById('fecha').value = now.toISOString().split('T')[0];
             document.getElementById('horaIngreso').value = now.toTimeString().slice(0, 5);
-            toggleDniField();
+            updateDatalists();
             updateStats();
             renderActiveVisits();
             renderHistoryVisits();
         }
 
-        function toggleDniField() {
-            const movilidad = document.getElementById('movilidad').value;
-            const dniGroup = document.getElementById('dniGroup');
-            const dniInput = document.getElementById('dni');
+        function updateDatalists() {
+            const visits = getVisits();
 
-            if (movilidad === 'Peatón' || movilidad === 'Bicicleta') {
-                dniGroup.classList.remove('dni-hidden');
-                dniInput.required = true;
-            } else {
-                dniGroup.classList.add('dni-hidden');
-                dniInput.required = false;
-                dniInput.value = '';
-            }
-        }
+            // Extract unique values
+            const nombres = [...new Set(visits.map(v => v.nombre).filter(n => n))];
+            const dnis = [...new Set(visits.map(v => v.dni).filter(d => d))];
+            const placas = [...new Set(visits.map(v => v.placa).filter(p => p && p !== 'N/A'))];
+            const aquienes = [...new Set(visits.map(v => v.aQuienVisita).filter(a => a))];
+            const autorizan = [...new Set(visits.map(v => v.quienAutoriza).filter(q => q))];
 
-        function toggleEditDniField() {
-            const movilidad = document.getElementById('editMovilidad').value;
-            const dniGroup = document.getElementById('editDniGroup');
-            const dniInput = document.getElementById('editDni');
+            // Helper to populate datalist
+            const populate = (id, values) => {
+                const datalist = document.getElementById(id);
+                if (datalist) {
+                    datalist.innerHTML = values.map(v => `<option value="${v}">`).join('');
+                }
+            };
 
-            if (movilidad === 'Peatón' || movilidad === 'Bicicleta') {
-                dniGroup.classList.remove('dni-hidden');
-                dniInput.required = true;
-            } else {
-                dniGroup.classList.add('dni-hidden');
-                dniInput.required = false;
-            }
+            populate('nombreList', nombres);
+            populate('dniList', dnis);
+            populate('placaList', placas);
+            populate('aquienList', aquienes);
+            populate('autorizaList', autorizan);
+
+            // Also populate edit form datalists
+            populate('editNombreList', nombres);
+            populate('editDniList', dnis);
+            populate('editPlacaList', placas);
+            populate('editAquienList', aquienes);
+            populate('editAutorizaList', autorizan);
         }
 
         function switchTab(tab) {
@@ -1127,13 +1140,13 @@
                 id: generateId(),
                 fecha: document.getElementById('fecha').value,
                 horaIngreso: document.getElementById('horaIngreso').value,
-                nombre: document.getElementById('nombre').value.trim(),
-                dni: dni,
+                nombre: document.getElementById('nombre').value.trim().toUpperCase(),
+                dni: dni.toUpperCase(),
                 movilidad: movilidad,
-                placa: document.getElementById('placa').value.trim() || 'N/A',
-                aQuienVisita: document.getElementById('aQuienVisita').value.trim(),
-                quienAutoriza: document.getElementById('quienAutoriza').value.trim(),
-                observaciones: document.getElementById('observaciones').value.trim(),
+                placa: (document.getElementById('placa').value.trim() || 'N/A').toUpperCase(),
+                aQuienVisita: document.getElementById('aQuienVisita').value.trim().toUpperCase(),
+                quienAutoriza: document.getElementById('quienAutoriza').value.trim().toUpperCase(),
+                observaciones: document.getElementById('observaciones').value.trim().toUpperCase(),
                 horaSalida: null,
                 observacionesSalida: '',
                 status: 'active',
@@ -1145,8 +1158,10 @@
             saveVisits(visits);
 
             document.getElementById('visitForm').reset();
-            init();
+            updateDatalists();
             updateStats();
+            renderActiveVisits();
+            renderHistoryVisits();
             showToast('✅ Visita registrada correctamente', 'success');
         }
 
@@ -1161,7 +1176,6 @@
                 'Bicicleta': '🚲'
             }[visit.movilidad] || '📍';
 
-            const showDni = visit.movilidad === 'Peatón' || visit.movilidad === 'Bicicleta';
             const isSearch = context === 'search';
 
             return `
@@ -1178,7 +1192,6 @@
                     </div>
                     ` : ''}
                     <div class="visit-details">
-                        ${showDni ? `
                         <div class="visit-detail">
                             <div class="icon">🆔</div>
                             <div class="info">
@@ -1186,7 +1199,6 @@
                                 <span>${visit.dni || 'N/A'}</span>
                             </div>
                         </div>
-                        ` : ''}
                         <div class="visit-detail">
                             <div class="icon">📅</div>
                             <div class="info">
@@ -1254,7 +1266,7 @@
 
         function performSearch() {
             const searchInput = document.getElementById('searchInput');
-            const searchTerm = searchInput.value.toLowerCase().trim();
+            const searchTerm = searchInput.value.toUpperCase().trim();
             const clearBtn = document.getElementById('clearSearchBtn');
             const resultsList = document.getElementById('searchResultsList');
             const searchTitle = document.getElementById('searchTitle');
@@ -1277,10 +1289,10 @@
 
             const visits = getVisits();
             const filtered = visits.filter(v => 
-                v.nombre.toLowerCase().includes(searchTerm) ||
-                (v.dni && v.dni.toLowerCase().includes(searchTerm)) ||
-                v.aQuienVisita.toLowerCase().includes(searchTerm) ||
-                v.placa.toLowerCase().includes(searchTerm)
+                v.nombre.toUpperCase().includes(searchTerm) ||
+                (v.dni && v.dni.toUpperCase().includes(searchTerm)) ||
+                v.aQuienVisita.toUpperCase().includes(searchTerm) ||
+                v.placa.toUpperCase().includes(searchTerm)
             );
 
             searchTitle.textContent = `Resultados para "${searchInput.value}"`;
@@ -1358,7 +1370,7 @@
 
             const id = currentExitId || document.getElementById('exitVisitId').value;
             const horaSalida = document.getElementById('horaSalida').value;
-            const observacionesSalida = document.getElementById('observacionesSalida').value.trim();
+            const observacionesSalida = document.getElementById('observacionesSalida').value.trim().toUpperCase();
 
             if (!horaSalida) {
                 showToast('❌ Ingresa la hora de salida', 'error');
@@ -1372,6 +1384,7 @@
                 visits[index].observacionesSalida = observacionesSalida;
                 visits[index].status = 'completed';
                 saveVisits(visits);
+                updateDatalists();
                 updateStats();
                 renderActiveVisits();
                 renderHistoryVisits();
@@ -1422,15 +1435,16 @@
 
                 visits[index].fecha = document.getElementById('editFecha').value;
                 visits[index].horaIngreso = document.getElementById('editHoraIngreso').value;
-                visits[index].nombre = document.getElementById('editNombre').value.trim();
-                visits[index].dni = dni;
+                visits[index].nombre = document.getElementById('editNombre').value.trim().toUpperCase();
+                visits[index].dni = dni.toUpperCase();
                 visits[index].movilidad = movilidad;
-                visits[index].placa = document.getElementById('editPlaca').value.trim() || 'N/A';
-                visits[index].aQuienVisita = document.getElementById('editAQuienVisita').value.trim();
-                visits[index].quienAutoriza = document.getElementById('editQuienAutoriza').value.trim();
-                visits[index].observaciones = document.getElementById('editObservaciones').value.trim();
+                visits[index].placa = (document.getElementById('editPlaca').value.trim() || 'N/A').toUpperCase();
+                visits[index].aQuienVisita = document.getElementById('editAQuienVisita').value.trim().toUpperCase();
+                visits[index].quienAutoriza = document.getElementById('editQuienAutoriza').value.trim().toUpperCase();
+                visits[index].observaciones = document.getElementById('editObservaciones').value.trim().toUpperCase();
 
                 saveVisits(visits);
+                updateDatalists();
                 updateStats();
                 renderActiveVisits();
                 renderHistoryVisits();
@@ -1446,6 +1460,7 @@
 
             const visits = getVisits().filter(v => v.id !== id);
             saveVisits(visits);
+            updateDatalists();
             updateStats();
             renderActiveVisits();
             renderHistoryVisits();
@@ -1582,6 +1597,7 @@
         function clearAllData() {
             if (!confirm('⚠️ ¿Eliminar TODOS los registros? Esta acción no se puede deshacer.')) return;
             localStorage.removeItem(STORAGE_KEY);
+            updateDatalists();
             updateStats();
             renderActiveVisits();
             renderHistoryVisits();
