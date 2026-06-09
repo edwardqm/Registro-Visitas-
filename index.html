@@ -699,6 +699,10 @@
             display: none !important;
         }
 
+        .placa-hidden {
+            display: none !important;
+        }
+
         /* Search results section */
         .search-results-header {
             display: flex;
@@ -782,7 +786,7 @@
             </div>
             <div class="stat-card">
                 <div class="number" id="stat-active">0</div>
-                <div class="label">En Planta</div>
+                <div class="label">Interno</div>
             </div>
             <div class="stat-card">
                 <div class="number" id="stat-completed">0</div>
@@ -830,7 +834,7 @@
 
                 <div class="form-group">
                     <label>Movilidad</label>
-                    <select id="movilidad" required >
+                    <select id="movilidad" required onchange="togglePlacaField()">
                         <option value="">Seleccionar...</option>
                         <option value="Peatón">🚶 Peatón</option>
                         <option value="Vehículo particular">🚗 Vehículo particular</option>
@@ -841,10 +845,16 @@
                     </select>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="placaGroup">
                     <label>Placa</label>
-                    <input type="text" id="placa" placeholder="Placa del vehículo" list="placaList">
+                    <input type="text" id="placa" placeholder="Placa del vehículo" list="placaList" oninput="formatPlaca(this)">
                     <datalist id="placaList"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label>Empresa</label>
+                    <input type="text" id="empresa" placeholder="Nombre de la empresa" required list="empresaList">
+                    <datalist id="empresaList"></datalist>
                 </div>
 
                 <div class="form-group">
@@ -958,7 +968,7 @@
                 </div>
                 <div class="form-group">
                     <label>Movilidad</label>
-                    <select id="editMovilidad" required >
+                    <select id="editMovilidad" required onchange="toggleEditPlacaField()">
                         <option value="Peatón">🚶 Peatón</option>
                         <option value="Vehículo particular">🚗 Vehículo particular</option>
                         <option value="Moto">🏍️ Moto</option>
@@ -967,10 +977,15 @@
                         <option value="Bicicleta">🚲 Bicicleta</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="editPlacaGroup">
                     <label>Placa</label>
-                    <input type="text" id="editPlaca" list="editPlacaList">
+                    <input type="text" id="editPlaca" list="editPlacaList" oninput="formatPlaca(this)">
                     <datalist id="editPlacaList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>Empresa</label>
+                    <input type="text" id="editEmpresa" required list="editEmpresaList">
+                    <datalist id="editEmpresaList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>¿A quién visita?</label>
@@ -1068,10 +1083,60 @@
             const now = new Date();
             document.getElementById('fecha').value = now.toISOString().split('T')[0];
             document.getElementById('horaIngreso').value = now.toTimeString().slice(0, 5);
+            togglePlacaField();
             updateDatalists();
             updateStats();
             renderActiveVisits();
             renderHistoryVisits();
+        }
+
+        function togglePlacaField() {
+            const movilidad = document.getElementById('movilidad').value;
+            const placaGroup = document.getElementById('placaGroup');
+            const placaInput = document.getElementById('placa');
+
+            if (movilidad === 'Peatón' || movilidad === 'Bicicleta') {
+                placaGroup.classList.add('placa-hidden');
+                placaInput.value = '*****';
+                placaInput.required = false;
+            } else {
+                placaGroup.classList.remove('placa-hidden');
+                if (placaInput.value === '*****') {
+                    placaInput.value = '';
+                }
+                placaInput.required = true;
+            }
+        }
+
+        function toggleEditPlacaField() {
+            const movilidad = document.getElementById('editMovilidad').value;
+            const placaGroup = document.getElementById('editPlacaGroup');
+            const placaInput = document.getElementById('editPlaca');
+
+            if (movilidad === 'Peatón' || movilidad === 'Bicicleta') {
+                placaGroup.classList.add('placa-hidden');
+                placaInput.value = '*****';
+                placaInput.required = false;
+            } else {
+                placaGroup.classList.remove('placa-hidden');
+                if (placaInput.value === '*****') {
+                    placaInput.value = '';
+                }
+                placaInput.required = true;
+            }
+        }
+
+        function formatPlaca(input) {
+            let value = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            // Only auto-add dash for non-moto vehicles (when user hasn't typed it manually)
+            const movilidad = document.getElementById('placa') === input 
+                ? document.getElementById('movilidad').value 
+                : document.getElementById('editMovilidad').value;
+
+            if (movilidad !== 'Moto' && !value.includes('-') && value.length > 3) {
+                value = value.substring(0, 3) + '-' + value.substring(3, 7);
+            }
+            input.value = value;
         }
 
         function updateDatalists() {
@@ -1081,6 +1146,7 @@
             const nombres = [...new Set(visits.map(v => v.nombre).filter(n => n))];
             const dnis = [...new Set(visits.map(v => v.dni).filter(d => d))];
             const placas = [...new Set(visits.map(v => v.placa).filter(p => p && p !== 'N/A'))];
+            const empresas = [...new Set(visits.map(v => v.empresa).filter(e => e))];
             const aquienes = [...new Set(visits.map(v => v.aQuienVisita).filter(a => a))];
             const autorizan = [...new Set(visits.map(v => v.quienAutoriza).filter(q => q))];
 
@@ -1095,6 +1161,7 @@
             populate('nombreList', nombres);
             populate('dniList', dnis);
             populate('placaList', placas);
+            populate('empresaList', empresas);
             populate('aquienList', aquienes);
             populate('autorizaList', autorizan);
 
@@ -1102,6 +1169,7 @@
             populate('editNombreList', nombres);
             populate('editDniList', dnis);
             populate('editPlacaList', placas);
+            populate('editEmpresaList', empresas);
             populate('editAquienList', aquienes);
             populate('editAutorizaList', autorizan);
         }
@@ -1143,7 +1211,7 @@
                 nombre: document.getElementById('nombre').value.trim().toUpperCase(),
                 dni: dni.toUpperCase(),
                 movilidad: movilidad,
-                placa: (document.getElementById('placa').value.trim() || 'N/A').toUpperCase(),
+                placa: document.getElementById('placa').value.trim().toUpperCase(),
                 aQuienVisita: document.getElementById('aQuienVisita').value.trim().toUpperCase(),
                 quienAutoriza: document.getElementById('quienAutoriza').value.trim().toUpperCase(),
                 observaciones: document.getElementById('observaciones').value.trim().toUpperCase(),
@@ -1183,12 +1251,12 @@
                     <div class="visit-header">
                         <div class="visit-name">${visit.nombre}</div>
                         <span class="visit-status ${isCompleted ? 'status-completed' : 'status-active'}">
-                            ${isCompleted ? '✓ Completada' : '● En Planta'}
+                            ${isCompleted ? '✓ Completada' : '● Interno'}
                         </span>
                     </div>
                     ${isSearch ? `
                     <div class="search-status-badge ${isCompleted ? 'completed' : 'active'}">
-                        ${isCompleted ? '🔴 YA SALIÓ' : '🟢 DENTRO DE PLANTA'}
+                        ${isCompleted ? '🔴 YA SALIÓ' : '🟢 DENTRO (INTERNO)'}
                     </div>
                     ` : ''}
                     <div class="visit-details">
@@ -1210,7 +1278,14 @@
                             <div class="icon">${movilidadIcon}</div>
                             <div class="info">
                                 <strong>${visit.movilidad}</strong>
-                                <span>${visit.placa}</span>
+                                <span>${visit.placa || '*****'}</span>
+                            </div>
+                        </div>
+                        <div class="visit-detail">
+                            <div class="icon">🏢</div>
+                            <div class="info">
+                                <strong>Empresa</strong>
+                                <span>${visit.empresa || 'N/A'}</span>
                             </div>
                         </div>
                         <div class="visit-detail">
@@ -1281,7 +1356,7 @@
                     <div class="empty-state">
                         <div class="icon">🔍</div>
                         <h3>Buscar visitante</h3>
-                        <p>Ingresa un nombre o DNI para verificar si está en planta o ya salió</p>
+                        <p>Ingresa un nombre o DNI para verificar si está interno o ya salió</p>
                     </div>
                 `;
                 return;
@@ -1291,6 +1366,7 @@
             const filtered = visits.filter(v => 
                 v.nombre.toUpperCase().includes(searchTerm) ||
                 (v.dni && v.dni.toUpperCase().includes(searchTerm)) ||
+                (v.empresa && v.empresa.toUpperCase().includes(searchTerm)) ||
                 v.aQuienVisita.toUpperCase().includes(searchTerm) ||
                 v.placa.toUpperCase().includes(searchTerm)
             );
@@ -1406,7 +1482,9 @@
             document.getElementById('editNombre').value = visit.nombre;
             document.getElementById('editMovilidad').value = visit.movilidad;
             document.getElementById('editDni').value = visit.dni || '';
-            document.getElementById('editPlaca').value = visit.placa === 'N/A' ? '' : visit.placa;
+            document.getElementById('editPlaca').value = visit.placa === '*****' ? '' : visit.placa;
+            toggleEditPlacaField();
+            document.getElementById('editEmpresa').value = visit.empresa || '';
             document.getElementById('editAQuienVisita').value = visit.aQuienVisita;
             document.getElementById('editQuienAutoriza').value = visit.quienAutoriza;
             document.getElementById('editObservaciones').value = visit.observaciones;
@@ -1501,7 +1579,7 @@
                 'Visita a': v.aQuienVisita,
                 'Autoriza': v.quienAutoriza,
                 'Hora Salida': v.horaSalida || '',
-                'Estado': v.status === 'active' ? 'En Planta' : 'Completada',
+                'Estado': v.status === 'active' ? 'Interno' : 'Completada',
                 'Observaciones': v.observaciones,
                 'Obs. Salida': v.observacionesSalida || ''
             }));
@@ -1552,7 +1630,7 @@
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
 
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Visita a', 'Autoriza', 'Hora Sal.', 'Estado']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Visita a', 'Autoriza', 'Hora Sal.', 'Estado']];
                 const data = visits.map(v => [
                     v.fecha,
                     v.horaIngreso,
@@ -1560,10 +1638,11 @@
                     v.dni || '-',
                     v.movilidad,
                     v.placa,
+                    v.empresa || '-',
                     v.aQuienVisita,
                     v.quienAutoriza,
                     v.horaSalida || '-',
-                    v.status === 'active' ? 'En Planta' : 'Completada'
+                    v.status === 'active' ? 'Interno' : 'Completada'
                 ]);
 
                 doc.autoTable({
