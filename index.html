@@ -995,9 +995,15 @@
             </div>
             <form id="exitForm" onsubmit="return registerExit(event)">
                 <input type="hidden" id="exitVisitId">
-                <div class="form-group">
-                    <label>Hora de Salida</label>
-                    <input type="time" id="horaSalida" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha de Salida</label>
+                        <input type="date" id="fechaSalida" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora de Salida</label>
+                        <input type="time" id="horaSalida" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Motivo de Salida</label>
@@ -1280,10 +1286,14 @@
                     <span>Descargar PDF<br><small style="opacity:0.7">.pdf</small></span>
                 </button>
             </div>
-            <div class="export-grid" style="grid-template-columns: 1fr; margin-top: 0;">
+            <div class="export-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
                 <button type="button" class="btn-export pdf" onclick="exportComidasPDF()" style="border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);">
                     <span class="export-icon">🍽️</span>
-                    <span>Reporte de Comidas por Colaborador<br><small style="opacity:0.7">.pdf</small></span>
+                    <span>Resumen Comidas por Colaborador<br><small style="opacity:0.7">.pdf</small></span>
+                </button>
+                <button type="button" class="btn-export pdf" onclick="exportComedorPDF()" style="border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05);">
+                    <span class="export-icon">🍴</span>
+                    <span>Reporte Comedor — Días de Comida<br><small style="opacity:0.7">.pdf</small></span>
                 </button>
             </div>
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
@@ -1606,6 +1616,7 @@
                 cena: document.getElementById('cena').checked,
                 cenaDesde: document.getElementById('cenaDesde').value,
                 cenaHasta: document.getElementById('cenaHasta').value,
+                fechaSalida: null,
                 horaSalida: null,
                 motivoSalida: '',
                 observacionesSalida: '',
@@ -1714,7 +1725,7 @@
                     ` : ''}
                     ${isCompleted ? `
                         <div style="margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 10px; font-size: 13px; color: var(--success);">
-                            🚪 Salida: ${visit.horaSalida} — ${visit.motivoSalida || 'Sin motivo'}
+                            🚪 Salida: ${formatDate(visit.fechaSalida || visit.fecha)} ${visit.horaSalida} — ${visit.motivoSalida || 'Sin motivo'}
                             ${visit.observacionesSalida ? `<br>📝 ${visit.observacionesSalida}` : ''}
                         </div>
                     ` : ''}
@@ -1836,6 +1847,7 @@
             currentExitId = id;
             document.getElementById('exitVisitId').value = id;
             const now = new Date();
+            document.getElementById('fechaSalida').value = now.toISOString().split('T')[0];
             document.getElementById('horaSalida').value = now.toTimeString().slice(0, 5);
             document.getElementById('motivoSalida').value = '';
             document.getElementById('observacionesSalida').value = '';
@@ -1851,10 +1863,15 @@
             if (event) event.preventDefault();
 
             const id = currentExitId || document.getElementById('exitVisitId').value;
+            const fechaSalida = document.getElementById('fechaSalida').value;
             const horaSalida = document.getElementById('horaSalida').value;
             const motivoSalida = document.getElementById('motivoSalida').value;
             const observacionesSalida = document.getElementById('observacionesSalida').value.trim().toUpperCase();
 
+            if (!fechaSalida) {
+                showToast('❌ Ingresa la fecha de salida', 'error');
+                return false;
+            }
             if (!horaSalida) {
                 showToast('❌ Ingresa la hora de salida', 'error');
                 return false;
@@ -1867,6 +1884,7 @@
             const visits = getVisits();
             const index = visits.findIndex(v => v.id === id);
             if (index !== -1) {
+                visits[index].fechaSalida = fechaSalida;
                 visits[index].horaSalida = horaSalida;
                 visits[index].motivoSalida = motivoSalida;
                 visits[index].observacionesSalida = observacionesSalida;
@@ -1918,6 +1936,15 @@
             document.getElementById('editQuienAutoriza').value = visit.quienAutoriza;
             document.getElementById('editObservaciones').value = visit.observaciones;
             document.getElementById('editHospedaje').value = visit.hospedaje || 'NO';
+            if (visit.status === 'completed') {
+                document.getElementById('editSalidaSection').style.display = 'block';
+                document.getElementById('editFechaSalida').value = visit.fechaSalida || '';
+                document.getElementById('editHoraSalida').value = visit.horaSalida || '';
+                document.getElementById('editMotivoSalida').value = visit.motivoSalida || '';
+                document.getElementById('editObservacionesSalida').value = visit.observacionesSalida || '';
+            } else {
+                document.getElementById('editSalidaSection').style.display = 'none';
+            }
             document.getElementById('editDesayuno').checked = visit.desayuno || false;
             document.getElementById('editDesayunoDesde').value = visit.desayunoDesde || '';
             document.getElementById('editDesayunoHasta').value = visit.desayunoHasta || '';
@@ -1959,6 +1986,12 @@
                 visits[index].observaciones = document.getElementById('editObservaciones').value.trim().toUpperCase();
                 const editHospedaje = document.getElementById('editHospedaje').value;
                 visits[index].hospedaje = editHospedaje;
+                if (visits[index].status === 'completed') {
+                    visits[index].fechaSalida = document.getElementById('editFechaSalida').value || null;
+                    visits[index].horaSalida = document.getElementById('editHoraSalida').value || null;
+                    visits[index].motivoSalida = document.getElementById('editMotivoSalida').value || '';
+                    visits[index].observacionesSalida = document.getElementById('editObservacionesSalida').value.trim().toUpperCase();
+                }
                 visits[index].desayuno = document.getElementById('editDesayuno').checked;
                 visits[index].desayunoDesde = document.getElementById('editDesayunoDesde').value;
                 visits[index].desayunoHasta = document.getElementById('editDesayunoHasta').value;
@@ -2119,6 +2152,7 @@
                     'Empresa': v.empresa || '',
                     'Motivo Ingreso': v.aQuienColaborador,
                     'Procedencia': v.quienAutoriza,
+                    'Fecha Salida': v.fechaSalida || '',
                     'Hora Salida': v.horaSalida || '',
                     'Motivo Salida': v.motivoSalida || '',
                     'Estado': v.status === 'active' ? 'Interno' : 'Completada',
@@ -2207,7 +2241,7 @@
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
 
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
                 const data = visits.map(v => {
                     const fechasDesde = [];
                     const fechasHasta = [];
@@ -2229,6 +2263,7 @@
                         v.empresa || '-',
                         v.aQuienColaborador,
                         v.quienAutoriza,
+                        v.fechaSalida || '-',
                         v.horaSalida || '-',
                         v.motivoSalida || '-',
                         v.status === 'active' ? 'Interno' : 'Completada',
@@ -2366,7 +2401,7 @@
                 doc.setFontSize(10);
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
                 const data = visits.map(v => {
                     const fechasDesde = [];
                     const fechasHasta = [];
@@ -2426,6 +2461,136 @@
                 const pdfBlob = doc.output('blob');
                 const msg = '🍽️ Reporte de Comidas por Colaborador\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal colaboradores: ' + lista.length;
                 shareFile(pdfBlob, filename, 'application/pdf', msg);
+            } catch (e) {
+                showToast('❌ Error al generar PDF', 'error');
+                console.error(e);
+            }
+        }
+
+        
+        function exportComedorPDF() {
+            const visits = getVisits();
+            if (visits.length === 0) {
+                showToast('❌ No hay datos para exportar', 'error');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait' });
+                const dt = getFormattedDateTime();
+                const filename = `reporte_comedor_${dt.full}.pdf`;
+
+                const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+                function generarDiasRango(desde, hasta) {
+                    const dias = [];
+                    if (!desde || !hasta) return dias;
+                    const d = new Date(desde + 'T00:00:00');
+                    const h = new Date(hasta + 'T00:00:00');
+                    while (d <= h) {
+                        const diaNombre = diasSemana[d.getDay()];
+                        const diaNum = String(d.getDate()).padStart(2, '0');
+                        const mesNum = String(d.getMonth() + 1).padStart(2, '0');
+                        const anio = d.getFullYear();
+                        dias.push(`${diaNombre} (${diaNum}-${mesNum}-${anio})`);
+                        d.setDate(d.getDate() + 1);
+                    }
+                    return dias;
+                }
+
+                // Agrupar por colaborador
+                const colaboradores = {};
+                visits.forEach(v => {
+                    const key = v.nombre;
+                    if (!colaboradores[key]) {
+                        colaboradores[key] = {
+                            nombre: v.nombre,
+                            dni: v.dni || '-',
+                            empresa: v.empresa || '-',
+                            desayunos: [],
+                            almuerzos: [],
+                            cenas: []
+                        };
+                    }
+                    if (v.desayuno && v.desayunoDesde && v.desayunoHasta) {
+                        const dias = generarDiasRango(v.desayunoDesde, v.desayunoHasta);
+                        colaboradores[key].desayunos.push(...dias);
+                    }
+                    if (v.almuerzo && v.almuerzoDesde && v.almuerzoHasta) {
+                        const dias = generarDiasRango(v.almuerzoDesde, v.almuerzoHasta);
+                        colaboradores[key].almuerzos.push(...dias);
+                    }
+                    if (v.cena && v.cenaDesde && v.cenaHasta) {
+                        const dias = generarDiasRango(v.cenaDesde, v.cenaHasta);
+                        colaboradores[key].cenas.push(...dias);
+                    }
+                });
+
+                const lista = Object.values(colaboradores).filter(c =>
+                    c.desayunos.length > 0 || c.almuerzos.length > 0 || c.cenas.length > 0
+                );
+
+                if (lista.length === 0) {
+                    showToast('❌ No hay comidas registradas', 'error');
+                    return;
+                }
+
+                doc.setFontSize(18);
+                doc.text('Reporte de Comedor — Control de Comidas', 14, 20);
+                doc.setFontSize(10);
+                doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
+                doc.text(`Total colaboradores con comidas: ${lista.length}`, 14, 34);
+
+                let y = 42;
+                lista.forEach((c, idx) => {
+                    if (y > 250) {
+                        doc.addPage();
+                        y = 20;
+                    }
+
+                    // Nombre del colaborador
+                    doc.setFontSize(13);
+                    doc.setTextColor(220, 38, 38);
+                    doc.text(c.nombre, 14, y);
+                    y += 6;
+
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`DNI: ${c.dni}  |  Empresa: ${c.empresa}`, 14, y);
+                    y += 8;
+
+                    doc.setFontSize(10);
+                    doc.setTextColor(0, 0, 0);
+
+                    const lineas = [];
+                    if (c.desayunos.length > 0) {
+                        lineas.push(`🍳 Desayuno: ${c.desayunos.join(', ')}  |  Total: ${c.desayunos.length}`);
+                    }
+                    if (c.almuerzos.length > 0) {
+                        lineas.push(`🍛 Almuerzo: ${c.almuerzos.join(', ')}  |  Total: ${c.almuerzos.length}`);
+                    }
+                    if (c.cenas.length > 0) {
+                        lineas.push(`🍽️ Cena: ${c.cenas.join(', ')}  |  Total: ${c.cenas.length}`);
+                    }
+
+                    lineas.forEach(linea => {
+                        const split = doc.splitTextToSize(linea, 180);
+                        split.forEach(l => {
+                            doc.text(l, 14, y);
+                            y += 5;
+                        });
+                        y += 2;
+                    });
+
+                    y += 6;
+                    // Línea separadora
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(14, y - 3, 196, y - 3);
+                });
+
+                doc.save(filename);
+                showToast(`📄 ${filename} descargado`, 'success');
             } catch (e) {
                 showToast('❌ Error al generar PDF', 'error');
                 console.error(e);
