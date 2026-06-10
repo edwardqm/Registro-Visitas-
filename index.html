@@ -2030,32 +2030,39 @@
 
         function getExportData() {
             const visits = getVisits();
-            return visits.map(v => ({
-                'Fecha': v.fecha,
-                'Hora Ingreso': v.horaIngreso,
-                'Nombre': v.nombre,
-                'DNI': v.dni || '',
-                'Movilidad': v.movilidad,
-                'Placa': v.placa,
-                'Empresa': v.empresa || '',
-                'Motivo Ingreso': v.aQuienColaborador,
-                'Procedencia': v.quienAutoriza,
-                'Hora Salida': v.horaSalida || '',
-                'Motivo Salida': v.motivoSalida || '',
-                'Estado': v.status === 'active' ? 'Interno' : 'Completada',
-                'Hospedaje': v.hospedaje || 'NO',
-                'Desayuno': v.desayuno ? 'Sí' : 'No',
-                'Desayuno Desde': v.desayunoDesde || '',
-                'Desayuno Hasta': v.desayunoHasta || '',
-                'Almuerzo': v.almuerzo ? 'Sí' : 'No',
-                'Almuerzo Desde': v.almuerzoDesde || '',
-                'Almuerzo Hasta': v.almuerzoHasta || '',
-                'Cena': v.cena ? 'Sí' : 'No',
-                'Cena Desde': v.cenaDesde || '',
-                'Cena Hasta': v.cenaHasta || '',
-                'Observaciones': v.observaciones,
-                'Obs. Salida': v.observacionesSalida || ''
-            }));
+            return visits.map(v => {
+                const fechasDesde = [];
+                const fechasHasta = [];
+                if (v.desayuno && v.desayunoDesde) fechasDesde.push(v.desayunoDesde);
+                if (v.almuerzo && v.almuerzoDesde) fechasDesde.push(v.almuerzoDesde);
+                if (v.cena && v.cenaDesde) fechasDesde.push(v.cenaDesde);
+                if (v.desayuno && v.desayunoHasta) fechasHasta.push(v.desayunoHasta);
+                if (v.almuerzo && v.almuerzoHasta) fechasHasta.push(v.almuerzoHasta);
+                if (v.cena && v.cenaHasta) fechasHasta.push(v.cenaHasta);
+                fechasDesde.sort();
+                fechasHasta.sort();
+                return {
+                    'Fecha': v.fecha,
+                    'Hora Ingreso': v.horaIngreso,
+                    'Nombre': v.nombre,
+                    'DNI': v.dni || '',
+                    'Movilidad': v.movilidad,
+                    'Placa': v.placa,
+                    'Empresa': v.empresa || '',
+                    'Motivo Ingreso': v.aQuienColaborador,
+                    'Procedencia': v.quienAutoriza,
+                    'Hora Salida': v.horaSalida || '',
+                    'Motivo Salida': v.motivoSalida || '',
+                    'Estado': v.status === 'active' ? 'Interno' : 'Completada',
+                    'Hospedaje': v.hospedaje || 'NO',
+                    'Desayuno': v.desayuno ? 'Sí' : 'No',
+                    'Almuerzo': v.almuerzo ? 'Sí' : 'No',
+                    'Cena': v.cena ? 'Sí' : 'No',
+                    'Desde': fechasDesde[0] || '',
+                    'Hasta': fechasHasta[fechasHasta.length - 1] || '',
+                    'Observaciones': v.observaciones
+                };
+            });
         }
 
         function exportToExcel() {
@@ -2103,25 +2110,39 @@
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
 
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena']];
-                const data = visits.map(v => [
-                    v.fecha,
-                    v.horaIngreso,
-                    v.nombre,
-                    v.dni || '-',
-                    v.movilidad,
-                    v.placa,
-                    v.empresa || '-',
-                    v.aQuienColaborador,
-                    v.quienAutoriza,
-                    v.horaSalida || '-',
-                    v.motivoSalida || '-',
-                    v.status === 'active' ? 'Interno' : 'Completada',
-                    v.hospedaje || 'NO',
-                    v.desayuno ? 'Sí' : 'No',
-                    v.almuerzo ? 'Sí' : 'No',
-                    v.cena ? 'Sí' : 'No'
-                ]);
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const data = visits.map(v => {
+                    const fechasDesde = [];
+                    const fechasHasta = [];
+                    if (v.desayuno && v.desayunoDesde) fechasDesde.push(v.desayunoDesde);
+                    if (v.almuerzo && v.almuerzoDesde) fechasDesde.push(v.almuerzoDesde);
+                    if (v.cena && v.cenaDesde) fechasDesde.push(v.cenaDesde);
+                    if (v.desayuno && v.desayunoHasta) fechasHasta.push(v.desayunoHasta);
+                    if (v.almuerzo && v.almuerzoHasta) fechasHasta.push(v.almuerzoHasta);
+                    if (v.cena && v.cenaHasta) fechasHasta.push(v.cenaHasta);
+                    fechasDesde.sort();
+                    fechasHasta.sort();
+                    return [
+                        v.fecha,
+                        v.horaIngreso,
+                        v.nombre,
+                        v.dni || '-',
+                        v.movilidad,
+                        v.placa,
+                        v.empresa || '-',
+                        v.aQuienColaborador,
+                        v.quienAutoriza,
+                        v.horaSalida || '-',
+                        v.motivoSalida || '-',
+                        v.status === 'active' ? 'Interno' : 'Completada',
+                        v.hospedaje || 'NO',
+                        v.desayuno ? 'Sí' : 'No',
+                        v.almuerzo ? 'Sí' : 'No',
+                        v.cena ? 'Sí' : 'No',
+                        fechasDesde[0] || '-',
+                        fechasHasta[fechasHasta.length - 1] || '-'
+                    ];
+                });
 
                 doc.autoTable({
                     head: headers,
