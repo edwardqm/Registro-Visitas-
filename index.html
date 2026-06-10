@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Registro de Visitas</title>
+    <title>Registro de Colaboradores</title>
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUmVnaXN0cm8gZGUgVmlzaXRhcyIsInNob3J0X25hbWUiOiJWaXNpdGFzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEifQ==">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -596,7 +596,6 @@
             margin-bottom: 6px;
         }
 
-        /* DEVELOPER INFO - RESALTADO */
         .dev-info {
             background: linear-gradient(135deg, var(--dark-light), var(--dark-lighter));
             border-radius: 16px;
@@ -703,7 +702,6 @@
             display: none !important;
         }
 
-        /* Search results section */
         .search-results-header {
             display: flex;
             justify-content: space-between;
@@ -770,8 +768,8 @@
             <div class="logo">
                 <div class="logo-icon">🛡️</div>
                 <div class="logo-text">
-                    <h1>Registro de Visitas</h1>
-                    <span>Control de acceso</span>
+                    <h1>Registro de Colaboradores</h1>
+                    <span>Control de ingreso de colaboradores</span>
                 </div>
             </div>
             <div class="header-actions">
@@ -806,7 +804,7 @@
         <div class="form-card animate-slide-up">
             <div class="form-title">
                 <span>📝</span>
-                Registrar Nueva Visita
+                Registrar Nuevo Ingreso
             </div>
             <form id="visitForm" onsubmit="saveVisit(event)">
                 <div class="form-row">
@@ -822,13 +820,13 @@
 
                 <div class="form-group">
                     <label>Nombre Completo</label>
-                    <input type="text" id="nombre" placeholder="Nombre del visitante" required list="nombreList">
+                    <input type="text" id="nombre" placeholder="Nombre del colaborador" required list="nombreList" oninput="autofillFromName(this.value)">
                     <datalist id="nombreList"></datalist>
                 </div>
 
                 <div class="form-group" id="dniGroup">
                     <label>DNI / Documento</label>
-                    <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList">
+                    <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList" inputmode="numeric" pattern="[0-9]*">
                     <datalist id="dniList"></datalist>
                 </div>
 
@@ -837,7 +835,8 @@
                     <select id="movilidad" required onchange="togglePlacaField()">
                         <option value="">Seleccionar...</option>
                         <option value="Peatón">🚶 Peatón</option>
-                        <option value="Vehículo particular">🚗 Vehículo particular</option>
+                        <option value="Auto o camioneta">🚗 Auto o camioneta</option>
+                        <option value="Vehículo particular">🚙 Vehículo particular</option>
                         <option value="Moto">🏍️ Moto</option>
                         <option value="Camión">🚛 Camión</option>
                         <option value="Van/Bus">🚌 Van / Bus</option>
@@ -858,20 +857,93 @@
                 </div>
 
                 <div class="form-group">
-                    <label>¿A quién visita?</label>
-                    <input type="text" id="aQuienVisita" placeholder="Nombre de la persona o área" required list="aquienList">
-                    <datalist id="aquienList"></datalist>
+                    <label>Motivo de Ingreso</label>
+                    <select id="aQuienColaborador" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="VISITA TÉCNICA">🔧 Visita técnica</option>
+                        <option value="ASISTENCIA">🤝 Asistencia</option>
+                        <option value="COMISIÓN">📋 Comisión</option>
+                        <option value="OTROS MOTIVOS">📋 Otros motivos</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label>¿Quién autoriza?</label>
-                    <input type="text" id="quienAutoriza" placeholder="Nombre de quien autoriza el ingreso" required list="autorizaList">
-                    <datalist id="autorizaList"></datalist>
+                    <label>Procedencia</label>
+                    <input type="text" id="quienAutoriza" placeholder="Procedencia del colaborador" required list="procedenciaList">
+                    <datalist id="procedenciaList"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label>Observaciones</label>
                     <textarea id="observaciones" placeholder="Notas adicionales..."></textarea>
+                </div>
+
+                
+                <div class="form-group">
+                    <label>¿Se hospedará?</label>
+                    <select id="hospedaje" required >
+                        <option value="">Seleccionar...</option>
+                        <option value="NO">❌ No</option>
+                        <option value="SI">✅ Sí</option>
+                    </select>
+                </div>
+
+                <div id="comidasSection">
+                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
+                        <span>🍽️</span>
+                        Servicio de comidas
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="desayuno" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍳 Desayuno</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="desayunoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="desayunoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="almuerzo" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍛 Almuerzo</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="almuerzoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="almuerzoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="cena" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍽️ Cena</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="cenaDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="cenaHasta">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary">
@@ -909,11 +981,12 @@
         <div class="dev-icon">👨‍💻</div>
         <h3>Edward Quezada M.</h3>
         <div class="dev-role">Desarrollador de la aplicación</div>
-        <span class="version">Versión 1.0</span>
+        <span class="version">Versión 2.0</span>
     </div>
 
     <div id="toast" class="toast"></div>
 
+    <!-- Modal de Salida -->
     <div class="modal-overlay" id="exitModal" onclick="if(event.target===this)closeModal('exitModal')">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -927,6 +1000,18 @@
                     <input type="time" id="horaSalida" required>
                 </div>
                 <div class="form-group">
+                    <label>Motivo de Salida</label>
+                    <select id="motivoSalida" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="FIN DE VISITA TÉCNICA">🔧 Fin de visita técnica</option>
+                        <option value="FIN DE ASISTENCIA">🤝 Fin de asistencia</option>
+                        <option value="FIN DE COMISIÓN">📋 Fin de comisión</option>
+                        <option value="PERMISO">📋 Permiso</option>
+                        <option value="EMERGENCIA">🚨 Emergencia</option>
+                        <option value="OTRO MOTIVO">📋 Otro motivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Observaciones de Salida</label>
                     <textarea id="observacionesSalida" placeholder="Notas adicionales sobre la salida..."></textarea>
                 </div>
@@ -938,10 +1023,33 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmación con Clave -->
+    <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeModal('confirmModal')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirmModalTitle">🔒 Confirmar Acción</h3>
+                <button type="button" class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+            </div>
+            <form id="confirmForm" onsubmit="return handleConfirmAction(event)">
+                <input type="hidden" id="confirmAction">
+                <input type="hidden" id="confirmId">
+                <div class="form-group">
+                    <label>Ingrese clave de seguridad</label>
+                    <input type="password" id="confirmClave" placeholder="Clave..." required inputmode="numeric" pattern="[0-9]*" style="font-size:24px; text-align:center; letter-spacing:8px;">
+                </div>
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px; text-align:center;">Ingrese la clave <strong>0000</strong> para confirmar</p>
+                <button type="submit" class="btn-primary" style="background:linear-gradient(135deg, var(--danger), #b91c1c); box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);">
+                    <span>🔓</span>
+                    Confirmar
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeModal('editModal')">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3 class="modal-title">✏️ Editar Visita</h3>
+                <h3 class="modal-title">✏️ Editar Ingreso</h3>
                 <button type="button" class="modal-close" onclick="closeModal('editModal')">✕</button>
             </div>
             <form id="editForm" onsubmit="return updateVisit(event)">
@@ -958,19 +1066,20 @@
                 </div>
                 <div class="form-group">
                     <label>Nombre</label>
-                    <input type="text" id="editNombre" required list="editNombreList">
+                    <input type="text" id="editNombre" required list="editNombreList" oninput="autofillEditFromName(this.value)">
                     <datalist id="editNombreList"></datalist>
                 </div>
                 <div class="form-group" id="editDniGroup">
                     <label>DNI / Documento</label>
-                    <input type="text" id="editDni" placeholder="Número de DNI o documento" required list="editDniList">
+                    <input type="text" id="editDni" placeholder="Número de DNI o documento" required list="editDniList" inputmode="numeric" pattern="[0-9]*">
                     <datalist id="editDniList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Movilidad</label>
                     <select id="editMovilidad" required onchange="toggleEditPlacaField()">
                         <option value="Peatón">🚶 Peatón</option>
-                        <option value="Vehículo particular">🚗 Vehículo particular</option>
+                        <option value="Auto o camioneta">🚗 Auto o camioneta</option>
+                        <option value="Vehículo particular">🚙 Vehículo particular</option>
                         <option value="Moto">🏍️ Moto</option>
                         <option value="Camión">🚛 Camión</option>
                         <option value="Van/Bus">🚌 Van / Bus</option>
@@ -988,19 +1097,159 @@
                     <datalist id="editEmpresaList"></datalist>
                 </div>
                 <div class="form-group">
-                    <label>¿A quién visita?</label>
-                    <input type="text" id="editAQuienVisita" required list="editAquienList">
-                    <datalist id="editAquienList"></datalist>
+                    <label>Motivo de Ingreso</label>
+                    <select id="editAQuienColaborador" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="VISITA TÉCNICA">🔧 Visita técnica</option>
+                        <option value="ASISTENCIA">🤝 Asistencia</option>
+                        <option value="COMISIÓN">📋 Comisión</option>
+                        <option value="OTROS MOTIVOS">📋 Otros motivos</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>¿Quién autoriza?</label>
-                    <input type="text" id="editQuienAutoriza" required list="editAutorizaList">
-                    <datalist id="editAutorizaList"></datalist>
+                    <label>Procedencia</label>
+                    <input type="text" id="editQuienAutoriza" required list="editProcedenciaList">
+                    <datalist id="editProcedenciaList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Observaciones</label>
                     <textarea id="editObservaciones"></textarea>
                 </div>
+                
+                <div class="form-group">
+                    <label>¿Se hospedará?</label>
+                    <select id="hospedaje" required >
+                        <option value="">Seleccionar...</option>
+                        <option value="NO">❌ No</option>
+                        <option value="SI">✅ Sí</option>
+                    </select>
+                </div>
+
+                <div id="comidasSection">
+                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
+                        <span>🍽️</span>
+                        Servicio de comidas
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="desayuno" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍳 Desayuno</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="desayunoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="desayunoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="almuerzo" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍛 Almuerzo</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="almuerzoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="almuerzoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="cena" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍽️ Cena</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="cenaDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="cenaHasta">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="form-group">
+                    <label>¿Se hospedará?</label>
+                    <select id="editHospedaje" required >
+                        <option value="NO">❌ No</option>
+                        <option value="SI">✅ Sí</option>
+                    </select>
+                </div>
+
+                <div id="editComidasSection">
+                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
+                        <span>🍽️</span>
+                        Servicio de comidas
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="editDesayuno" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍳 Desayuno</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="editDesayunoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="editDesayunoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="editAlmuerzo" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍛 Almuerzo</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="editAlmuerzoDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="editAlmuerzoHasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+                            <input type="checkbox" id="editCena" style="width:20px; height:20px; accent-color:var(--primary);">
+                            <span>🍽️ Cena</span>
+                        </label>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Desde</label>
+                                <input type="date" id="editCenaDesde">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:11px;">Hasta</label>
+                                <input type="date" id="editCenaHasta">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-primary">
                     <span>💾</span>
                     Actualizar Registro
@@ -1018,7 +1267,7 @@
 
             <div class="file-info">
                 <strong>📁 Registros encontrados:</strong>
-                <span id="exportCount">0 visitas</span>
+                <span id="exportCount">0 colaboradores</span>
             </div>
 
             <div class="export-grid">
@@ -1054,7 +1303,43 @@
     </nav>
 
     <script>
-        const STORAGE_KEY = 'registro_visitas_v4';
+        const STORAGE_KEY = 'registro_colaboradores_v4';
+        const HISTORIAL_KEY = 'historial_colaboradores_v1';
+        const DELETE_PASSWORD = '0000';
+
+
+        function getHistorialColaboradores() {
+            const data = localStorage.getItem(HISTORIAL_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveHistorialColaboradores(colaboradores) {
+            localStorage.setItem(HISTORIAL_KEY, JSON.stringify(colaboradores));
+        }
+
+        function agregarOActualizarColaborador(nombre, dni, empresa, procedencia) {
+            const historial = getHistorialColaboradores();
+            const nombreUpper = nombre.trim().toUpperCase();
+            const index = historial.findIndex(c => c.nombre === nombreUpper);
+
+            const colaborador = {
+                nombre: nombreUpper,
+                dni: dni ? dni.toUpperCase() : '',
+                empresa: empresa ? empresa.toUpperCase() : '',
+                procedencia: procedencia ? procedencia.toUpperCase() : ''
+            };
+
+            if (index !== -1) {
+                // Actualizar datos existentes si hay nueva información
+                if (colaborador.dni) historial[index].dni = colaborador.dni;
+                if (colaborador.empresa) historial[index].empresa = colaborador.empresa;
+                if (colaborador.procedencia) historial[index].procedencia = colaborador.procedencia;
+            } else {
+                historial.push(colaborador);
+            }
+
+            saveHistorialColaboradores(historial);
+        }
 
         function getVisits() {
             const data = localStorage.getItem(STORAGE_KEY);
@@ -1077,6 +1362,33 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             return { dateStr: `${day}-${month}-${year}`, timeStr: `${hours}-${minutes}`, full: `${day}-${month}-${year}_${hours}-${minutes}` };
+        }
+
+
+        function autofillFromName(nameValue) {
+            const historial = getHistorialColaboradores();
+            const trimmedName = nameValue.trim().toUpperCase();
+            if (!trimmedName) return;
+
+            const match = historial.find(c => c.nombre === trimmedName);
+            if (match) {
+                if (match.dni) document.getElementById('dni').value = match.dni;
+                if (match.empresa) document.getElementById('empresa').value = match.empresa;
+                if (match.procedencia) document.getElementById('quienAutoriza').value = match.procedencia;
+            }
+        }
+
+        function autofillEditFromName(nameValue) {
+            const historial = getHistorialColaboradores();
+            const trimmedName = nameValue.trim().toUpperCase();
+            if (!trimmedName) return;
+
+            const match = historial.find(c => c.nombre === trimmedName);
+            if (match) {
+                if (match.dni) document.getElementById('editDni').value = match.dni;
+                if (match.empresa) document.getElementById('editEmpresa').value = match.empresa;
+                if (match.procedencia) document.getElementById('editQuienAutoriza').value = match.procedencia;
+            }
         }
 
         function init() {
@@ -1126,9 +1438,11 @@
             }
         }
 
+        
+
+
         function formatPlaca(input) {
             let value = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
-            // Only auto-add dash for non-moto vehicles (when user hasn't typed it manually)
             const movilidad = document.getElementById('placa') === input 
                 ? document.getElementById('movilidad').value 
                 : document.getElementById('editMovilidad').value;
@@ -1140,17 +1454,20 @@
         }
 
         function updateDatalists() {
+            const historial = getHistorialColaboradores();
             const visits = getVisits();
 
-            // Extract unique values
-            const nombres = [...new Set(visits.map(v => v.nombre).filter(n => n))];
-            const dnis = [...new Set(visits.map(v => v.dni).filter(d => d))];
-            const placas = [...new Set(visits.map(v => v.placa).filter(p => p && p !== 'N/A'))];
-            const empresas = [...new Set(visits.map(v => v.empresa).filter(e => e))];
-            const aquienes = [...new Set(visits.map(v => v.aQuienVisita).filter(a => a))];
-            const autorizan = [...new Set(visits.map(v => v.quienAutoriza).filter(q => q))];
+            // Nombres del historial de colaboradores (evita duplicados)
+            const nombres = historial.map(c => c.nombre).filter(n => n);
 
-            // Helper to populate datalist
+            // DNI, empresas y procedencias del historial
+            const dnis = historial.map(c => c.dni).filter(d => d);
+            const empresas = [...new Set([...historial.map(c => c.empresa).filter(e => e), ...visits.map(v => v.empresa).filter(e => e)])];
+            const procedencias = [...new Set([...historial.map(c => c.procedencia).filter(p => p), ...visits.map(v => v.quienAutoriza).filter(q => q)])];
+
+            // Placas de visitas
+            const placas = [...new Set(visits.map(v => v.placa).filter(p => p && p !== 'N/A' && p !== '*****'))];
+
             const populate = (id, values) => {
                 const datalist = document.getElementById(id);
                 if (datalist) {
@@ -1162,16 +1479,13 @@
             populate('dniList', dnis);
             populate('placaList', placas);
             populate('empresaList', empresas);
-            populate('aquienList', aquienes);
-            populate('autorizaList', autorizan);
+            populate('procedenciaList', procedencias);
 
-            // Also populate edit form datalists
             populate('editNombreList', nombres);
             populate('editDniList', dnis);
             populate('editPlacaList', placas);
             populate('editEmpresaList', empresas);
-            populate('editAquienList', aquienes);
-            populate('editAutorizaList', autorizan);
+            populate('editProcedenciaList', procedencias);
         }
 
         function switchTab(tab) {
@@ -1200,10 +1514,9 @@
             event.preventDefault();
 
             const movilidad = document.getElementById('movilidad').value;
-            const dni = (movilidad === 'Peatón' || movilidad === 'Bicicleta') 
-                ? document.getElementById('dni').value.trim() 
-                : '';
+            const dni = document.getElementById('dni').value.trim();
 
+            const hospedaje = document.getElementById('hospedaje').value;
             const visit = {
                 id: generateId(),
                 fecha: document.getElementById('fecha').value,
@@ -1212,10 +1525,22 @@
                 dni: dni.toUpperCase(),
                 movilidad: movilidad,
                 placa: document.getElementById('placa').value.trim().toUpperCase(),
-                aQuienVisita: document.getElementById('aQuienVisita').value.trim().toUpperCase(),
+                empresa: document.getElementById('empresa').value.trim().toUpperCase(),
+                aQuienColaborador: document.getElementById('aQuienColaborador').value,
                 quienAutoriza: document.getElementById('quienAutoriza').value.trim().toUpperCase(),
                 observaciones: document.getElementById('observaciones').value.trim().toUpperCase(),
+                hospedaje: hospedaje,
+                desayuno: document.getElementById('desayuno').checked,
+                desayunoDesde: document.getElementById('desayunoDesde').value,
+                desayunoHasta: document.getElementById('desayunoHasta').value,
+                almuerzo: document.getElementById('almuerzo').checked,
+                almuerzoDesde: document.getElementById('almuerzoDesde').value,
+                almuerzoHasta: document.getElementById('almuerzoHasta').value,
+                cena: document.getElementById('cena').checked,
+                cenaDesde: document.getElementById('cenaDesde').value,
+                cenaHasta: document.getElementById('cenaHasta').value,
                 horaSalida: null,
+                motivoSalida: '',
                 observacionesSalida: '',
                 status: 'active',
                 createdAt: new Date().toISOString()
@@ -1225,19 +1550,23 @@
             visits.unshift(visit);
             saveVisits(visits);
 
+            // Agregar/actualizar en historial de colaboradores
+            agregarOActualizarColaborador(visit.nombre, visit.dni, visit.empresa, visit.quienAutoriza);
+
             document.getElementById('visitForm').reset();
             updateDatalists();
             updateStats();
             renderActiveVisits();
             renderHistoryVisits();
-            showToast('✅ Visita registrada correctamente', 'success');
+            showToast('✅ Ingreso registrado correctamente', 'success');
         }
 
         function renderVisitCard(visit, context) {
             const isCompleted = visit.status === 'completed';
             const movilidadIcon = {
                 'Peatón': '🚶',
-                'Vehículo particular': '🚗',
+                'Auto o camioneta': '🚗',
+                'Vehículo particular': '🚙',
                 'Moto': '🏍️',
                 'Camión': '🚛',
                 'Van/Bus': '🚌',
@@ -1289,16 +1618,16 @@
                             </div>
                         </div>
                         <div class="visit-detail">
-                            <div class="icon">👤</div>
+                            <div class="icon">📋</div>
                             <div class="info">
-                                <strong>Visita a</strong>
-                                <span>${visit.aQuienVisita}</span>
+                                <strong>Motivo</strong>
+                                <span>${visit.aQuienColaborador}</span>
                             </div>
                         </div>
                         <div class="visit-detail">
-                            <div class="icon">✅</div>
+                            <div class="icon">📍</div>
                             <div class="info">
-                                <strong>Autoriza</strong>
+                                <strong>Procedencia</strong>
                                 <span>${visit.quienAutoriza}</span>
                             </div>
                         </div>
@@ -1308,9 +1637,18 @@
                             📝 ${visit.observaciones}
                         </div>
                     ` : ''}
-                    ${isCompleted && visit.observacionesSalida ? `
+                    ${(visit.desayuno || visit.almuerzo || visit.cena) ? `
+                        <div style="margin-top: 10px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; font-size: 13px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">🍽️ Servicio de Comidas</div>
+                            ${visit.desayuno ? `<div style="margin-bottom: 4px;">🍳 <strong>Desayuno:</strong> ${visit.desayunoDesde || '?'} → ${visit.desayunoHasta || '?'}</div>` : ''}
+                            ${visit.almuerzo ? `<div style="margin-bottom: 4px;">🍛 <strong>Almuerzo:</strong> ${visit.almuerzoDesde || '?'} → ${visit.almuerzoHasta || '?'}</div>` : ''}
+                            ${visit.cena ? `<div>🍽️ <strong>Cena:</strong> ${visit.cenaDesde || '?'} → ${visit.cenaHasta || '?'}</div>` : ''}
+                        </div>
+                    ` : ''}
+                    ${isCompleted ? `
                         <div style="margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 10px; font-size: 13px; color: var(--success);">
-                            🚪 Salida: ${visit.horaSalida} — ${visit.observacionesSalida}
+                            🚪 Salida: ${visit.horaSalida} — ${visit.motivoSalida || 'Sin motivo'}
+                            ${visit.observacionesSalida ? `<br>📝 ${visit.observacionesSalida}` : ''}
                         </div>
                     ` : ''}
                     ${!isCompleted ? `
@@ -1321,7 +1659,7 @@
                             <button type="button" class="btn-small btn-edit" onclick="openEditModal('${visit.id}')">
                                 <span>✏️</span> Editar
                             </button>
-                            <button type="button" class="btn-small btn-delete" onclick="deleteVisit('${visit.id}')">
+                            <button type="button" class="btn-small btn-delete" onclick="confirmDelete('${visit.id}')">
                                 <span>🗑️</span>
                             </button>
                         </div>
@@ -1330,7 +1668,7 @@
                             <button type="button" class="btn-small btn-edit" onclick="openEditModal('${visit.id}')">
                                 <span>✏️</span> Editar
                             </button>
-                            <button type="button" class="btn-small btn-delete" onclick="deleteVisit('${visit.id}')">
+                            <button type="button" class="btn-small btn-delete" onclick="confirmDelete('${visit.id}')">
                                 <span>🗑️</span> Eliminar
                             </button>
                         </div>
@@ -1355,8 +1693,8 @@
                 resultsList.innerHTML = `
                     <div class="empty-state">
                         <div class="icon">🔍</div>
-                        <h3>Buscar visitante</h3>
-                        <p>Ingresa un nombre o DNI para verificar si está interno o ya salió</p>
+                        <h3>Buscar colaborador</h3>
+                        <p>Ingresa un nombre o DNI para verificar si el colaborador está interno o ya salió</p>
                     </div>
                 `;
                 return;
@@ -1367,7 +1705,7 @@
                 v.nombre.toUpperCase().includes(searchTerm) ||
                 (v.dni && v.dni.toUpperCase().includes(searchTerm)) ||
                 (v.empresa && v.empresa.toUpperCase().includes(searchTerm)) ||
-                v.aQuienVisita.toUpperCase().includes(searchTerm) ||
+                v.aQuienColaborador.toUpperCase().includes(searchTerm) ||
                 v.placa.toUpperCase().includes(searchTerm)
             );
 
@@ -1400,8 +1738,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="icon">🟡</div>
-                        <h3>No hay visitas activas</h3>
-                        <p>Las visitas en curso aparecerán aquí</p>
+                        <h3>No hay colaboradores activos</h3>
+                        <p>Los colaboradores en curso aparecerán aquí</p>
                     </div>
                 `;
             } else {
@@ -1417,7 +1755,7 @@
                     <div class="empty-state">
                         <div class="icon">📋</div>
                         <h3>Sin historial</h3>
-                        <p>Las visitas completadas aparecerán aquí</p>
+                        <p>Los registros completados aparecerán aquí</p>
                     </div>
                 `;
             } else {
@@ -1432,6 +1770,7 @@
             document.getElementById('exitVisitId').value = id;
             const now = new Date();
             document.getElementById('horaSalida').value = now.toTimeString().slice(0, 5);
+            document.getElementById('motivoSalida').value = '';
             document.getElementById('observacionesSalida').value = '';
 
             const modal = document.getElementById('exitModal');
@@ -1446,10 +1785,15 @@
 
             const id = currentExitId || document.getElementById('exitVisitId').value;
             const horaSalida = document.getElementById('horaSalida').value;
+            const motivoSalida = document.getElementById('motivoSalida').value;
             const observacionesSalida = document.getElementById('observacionesSalida').value.trim().toUpperCase();
 
             if (!horaSalida) {
                 showToast('❌ Ingresa la hora de salida', 'error');
+                return false;
+            }
+            if (!motivoSalida) {
+                showToast('❌ Selecciona el motivo de salida', 'error');
                 return false;
             }
 
@@ -1457,6 +1801,7 @@
             const index = visits.findIndex(v => v.id === id);
             if (index !== -1) {
                 visits[index].horaSalida = horaSalida;
+                visits[index].motivoSalida = motivoSalida;
                 visits[index].observacionesSalida = observacionesSalida;
                 visits[index].status = 'completed';
                 saveVisits(visits);
@@ -1471,7 +1816,24 @@
             return false;
         }
 
+        let pendingEditId = null;
+
         function openEditModal(id) {
+            pendingEditId = id;
+            document.getElementById('confirmAction').value = 'edit';
+            document.getElementById('confirmId').value = id;
+            document.getElementById('confirmModalTitle').textContent = '🔒 Editar Registro';
+            document.getElementById('confirmClave').value = '';
+
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+            void modal.offsetHeight;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('confirmClave').focus(), 100);
+        }
+
+        function openEditModalAfterConfirm(id) {
             const visits = getVisits();
             const visit = visits.find(v => v.id === id);
             if (!visit) return;
@@ -1485,11 +1847,19 @@
             document.getElementById('editPlaca').value = visit.placa === '*****' ? '' : visit.placa;
             toggleEditPlacaField();
             document.getElementById('editEmpresa').value = visit.empresa || '';
-            document.getElementById('editAQuienVisita').value = visit.aQuienVisita;
+            document.getElementById('editAQuienColaborador').value = visit.aQuienColaborador;
             document.getElementById('editQuienAutoriza').value = visit.quienAutoriza;
             document.getElementById('editObservaciones').value = visit.observaciones;
-
-            toggleEditDniField();
+            document.getElementById('editHospedaje').value = visit.hospedaje || 'NO';
+            document.getElementById('editDesayuno').checked = visit.desayuno || false;
+            document.getElementById('editDesayunoDesde').value = visit.desayunoDesde || '';
+            document.getElementById('editDesayunoHasta').value = visit.desayunoHasta || '';
+            document.getElementById('editAlmuerzo').checked = visit.almuerzo || false;
+            document.getElementById('editAlmuerzoDesde').value = visit.almuerzoDesde || '';
+            document.getElementById('editAlmuerzoHasta').value = visit.almuerzoHasta || '';
+            document.getElementById('editCena').checked = visit.cena || false;
+            document.getElementById('editCenaDesde').value = visit.cenaDesde || '';
+            document.getElementById('editCenaHasta').value = visit.cenaHasta || '';
 
             const modal = document.getElementById('editModal');
             modal.style.display = 'flex';
@@ -1507,9 +1877,7 @@
 
             if (index !== -1) {
                 const movilidad = document.getElementById('editMovilidad').value;
-                const dni = (movilidad === 'Peatón' || movilidad === 'Bicicleta') 
-                    ? document.getElementById('editDni').value.trim() 
-                    : '';
+                const dni = document.getElementById('editDni').value.trim();
 
                 visits[index].fecha = document.getElementById('editFecha').value;
                 visits[index].horaIngreso = document.getElementById('editHoraIngreso').value;
@@ -1517,11 +1885,32 @@
                 visits[index].dni = dni.toUpperCase();
                 visits[index].movilidad = movilidad;
                 visits[index].placa = (document.getElementById('editPlaca').value.trim() || 'N/A').toUpperCase();
-                visits[index].aQuienVisita = document.getElementById('editAQuienVisita').value.trim().toUpperCase();
+                visits[index].empresa = document.getElementById('editEmpresa').value.trim().toUpperCase();
+                visits[index].aQuienColaborador = document.getElementById('editAQuienColaborador').value;
                 visits[index].quienAutoriza = document.getElementById('editQuienAutoriza').value.trim().toUpperCase();
                 visits[index].observaciones = document.getElementById('editObservaciones').value.trim().toUpperCase();
+                const editHospedaje = document.getElementById('editHospedaje').value;
+                visits[index].hospedaje = editHospedaje;
+                visits[index].desayuno = document.getElementById('editDesayuno').checked;
+                visits[index].desayunoDesde = document.getElementById('editDesayunoDesde').value;
+                visits[index].desayunoHasta = document.getElementById('editDesayunoHasta').value;
+                visits[index].almuerzo = document.getElementById('editAlmuerzo').checked;
+                visits[index].almuerzoDesde = document.getElementById('editAlmuerzoDesde').value;
+                visits[index].almuerzoHasta = document.getElementById('editAlmuerzoHasta').value;
+                visits[index].cena = document.getElementById('editCena').checked;
+                visits[index].cenaDesde = document.getElementById('editCenaDesde').value;
+                visits[index].cenaHasta = document.getElementById('editCenaHasta').value;
 
                 saveVisits(visits);
+
+                // Actualizar historial de colaboradores
+                agregarOActualizarColaborador(
+                    visits[index].nombre,
+                    visits[index].dni,
+                    visits[index].empresa,
+                    visits[index].quienAutoriza
+                );
+
                 updateDatalists();
                 updateStats();
                 renderActiveVisits();
@@ -1533,17 +1922,89 @@
             return false;
         }
 
-        function deleteVisit(id) {
-            if (!confirm('¿Estás seguro de eliminar este registro?')) return;
+        // Variables para la confirmación con clave
+        let pendingDeleteId = null;
+        let pendingClearAll = false;
 
-            const visits = getVisits().filter(v => v.id !== id);
-            saveVisits(visits);
-            updateDatalists();
-            updateStats();
-            renderActiveVisits();
-            renderHistoryVisits();
-            performSearch();
-            showToast('🗑️ Registro eliminado', 'success');
+        function confirmDelete(id) {
+            pendingDeleteId = id;
+            pendingClearAll = false;
+            document.getElementById('confirmAction').value = 'delete';
+            document.getElementById('confirmId').value = id;
+            document.getElementById('confirmModalTitle').textContent = '🔒 Eliminar Registro';
+            document.getElementById('confirmClave').value = '';
+
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+            void modal.offsetHeight;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('confirmClave').focus(), 100);
+        }
+
+        function clearAllData() {
+            pendingDeleteId = null;
+            pendingClearAll = true;
+            document.getElementById('confirmAction').value = 'clearAll';
+            document.getElementById('confirmId').value = '';
+            document.getElementById('confirmModalTitle').textContent = '🔒 Eliminar Todos los Registros';
+            document.getElementById('confirmClave').value = '';
+
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+            void modal.offsetHeight;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('confirmClave').focus(), 100);
+        }
+
+        function handleConfirmAction(event) {
+            if (event) event.preventDefault();
+
+            const clave = document.getElementById('confirmClave').value;
+
+            if (clave !== DELETE_PASSWORD) {
+                showToast('❌ Clave incorrecta', 'error');
+                document.getElementById('confirmClave').value = '';
+                document.getElementById('confirmClave').focus();
+                return false;
+            }
+
+            const action = document.getElementById('confirmAction').value;
+
+            if (action === 'edit') {
+                const id = document.getElementById('confirmId').value;
+                closeModal('confirmModal');
+                pendingEditId = null;
+                openEditModalAfterConfirm(id);
+                return false;
+            }
+
+            if (action === 'delete') {
+                const id = document.getElementById('confirmId').value;
+                const visits = getVisits().filter(v => v.id !== id);
+                saveVisits(visits);
+                updateDatalists();
+                updateStats();
+                renderActiveVisits();
+                renderHistoryVisits();
+                performSearch();
+                showToast('🗑️ Registro eliminado', 'success');
+            } else if (action === 'clearAll') {
+                localStorage.removeItem(STORAGE_KEY);
+                updateDatalists();
+                updateStats();
+                renderActiveVisits();
+                renderHistoryVisits();
+                performSearch();
+                showToast('🗑️ Todos los datos eliminados', 'success');
+            }
+
+            closeModal('confirmModal');
+            pendingDeleteId = null;
+            pendingClearAll = false;
+            pendingEditId = null;
+            return false;
         }
 
         function updateStats() {
@@ -1558,7 +2019,7 @@
 
         function showExportModal() {
             const visits = getVisits();
-            document.getElementById('exportCount').textContent = `${visits.length} visita${visits.length !== 1 ? 's' : ''}`;
+            document.getElementById('exportCount').textContent = `${visits.length} ingreso${visits.length !== 1 ? 's' : ''}`;
 
             const modal = document.getElementById('exportModal');
             modal.style.display = 'flex';
@@ -1576,10 +2037,22 @@
                 'DNI': v.dni || '',
                 'Movilidad': v.movilidad,
                 'Placa': v.placa,
-                'Visita a': v.aQuienVisita,
-                'Autoriza': v.quienAutoriza,
+                'Empresa': v.empresa || '',
+                'Motivo Ingreso': v.aQuienColaborador,
+                'Procedencia': v.quienAutoriza,
                 'Hora Salida': v.horaSalida || '',
+                'Motivo Salida': v.motivoSalida || '',
                 'Estado': v.status === 'active' ? 'Interno' : 'Completada',
+                'Hospedaje': v.hospedaje || 'NO',
+                'Desayuno': v.desayuno ? 'Sí' : 'No',
+                'Desayuno Desde': v.desayunoDesde || '',
+                'Desayuno Hasta': v.desayunoHasta || '',
+                'Almuerzo': v.almuerzo ? 'Sí' : 'No',
+                'Almuerzo Desde': v.almuerzoDesde || '',
+                'Almuerzo Hasta': v.almuerzoHasta || '',
+                'Cena': v.cena ? 'Sí' : 'No',
+                'Cena Desde': v.cenaDesde || '',
+                'Cena Hasta': v.cenaHasta || '',
                 'Observaciones': v.observaciones,
                 'Obs. Salida': v.observacionesSalida || ''
             }));
@@ -1596,10 +2069,10 @@
                 const data = getExportData();
                 const ws = XLSX.utils.json_to_sheet(data);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, 'Visitas');
+                XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
 
                 const dt = getFormattedDateTime();
-                const filename = `visitas_${dt.full}.xlsx`;
+                const filename = `colaboradores_${dt.full}.xlsx`;
 
                 XLSX.writeFile(wb, filename);
                 showToast(`📊 ${filename} descargado`, 'success');
@@ -1621,16 +2094,16 @@
                 const doc = new jsPDF({ orientation: 'landscape' });
 
                 const dt = getFormattedDateTime();
-                const filename = `visitas_${dt.full}.pdf`;
+                const filename = `colaboradores_${dt.full}.pdf`;
 
                 doc.setFontSize(18);
-                doc.text('Registro de Visitas', 14, 20);
+                doc.text('Registro de Colaboradores', 14, 20);
 
                 doc.setFontSize(10);
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
 
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Visita a', 'Autoriza', 'Hora Sal.', 'Estado']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena']];
                 const data = visits.map(v => [
                     v.fecha,
                     v.horaIngreso,
@@ -1639,10 +2112,15 @@
                     v.movilidad,
                     v.placa,
                     v.empresa || '-',
-                    v.aQuienVisita,
+                    v.aQuienColaborador,
                     v.quienAutoriza,
                     v.horaSalida || '-',
-                    v.status === 'active' ? 'Interno' : 'Completada'
+                    v.motivoSalida || '-',
+                    v.status === 'active' ? 'Interno' : 'Completada',
+                    v.hospedaje || 'NO',
+                    v.desayuno ? 'Sí' : 'No',
+                    v.almuerzo ? 'Sí' : 'No',
+                    v.cena ? 'Sí' : 'No'
                 ]);
 
                 doc.autoTable({
@@ -1671,17 +2149,6 @@
                 document.body.style.overflow = '';
             }, 300);
             currentExitId = null;
-        }
-
-        function clearAllData() {
-            if (!confirm('⚠️ ¿Eliminar TODOS los registros? Esta acción no se puede deshacer.')) return;
-            localStorage.removeItem(STORAGE_KEY);
-            updateDatalists();
-            updateStats();
-            renderActiveVisits();
-            renderHistoryVisits();
-            performSearch();
-            showToast('🗑️ Todos los datos eliminados', 'success');
         }
 
         function showToast(message, type) {
