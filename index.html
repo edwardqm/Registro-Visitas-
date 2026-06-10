@@ -1286,6 +1286,25 @@
                     <span>Reporte de Comidas por Colaborador<br><small style="opacity:0.7">.pdf</small></span>
                 </button>
             </div>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; text-align: center; font-weight: 600;">📲 COMPARTIR POR WHATSAPP</div>
+                <div class="export-grid">
+                    <button type="button" class="btn-export" onclick="shareExcelWhatsApp()" style="border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05);">
+                        <span class="export-icon">📊</span>
+                        <span>Compartir Excel<br><small style="opacity:0.7">WhatsApp</small></span>
+                    </button>
+                    <button type="button" class="btn-export" onclick="sharePDFWhatsApp()" style="border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);">
+                        <span class="export-icon">📄</span>
+                        <span>Compartir PDF<br><small style="opacity:0.7">WhatsApp</small></span>
+                    </button>
+                </div>
+                <div class="export-grid" style="grid-template-columns: 1fr; margin-top: 8px;">
+                    <button type="button" class="btn-export" onclick="shareComidasPDFWhatsApp()" style="border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05);">
+                        <span class="export-icon">🍽️</span>
+                        <span>Compartir Reporte Comidas<br><small style="opacity:0.7">WhatsApp</small></span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2114,6 +2133,23 @@
             });
         }
 
+        
+        function shareFile(blob, filename, mime, message) {
+            const file = new File([blob], filename, { type: mime });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({ files: [file], title: filename, text: message })
+                    .then(() => showToast('✅ Compartido', 'success'))
+                    .catch(() => shareWhatsApp(message));
+            } else {
+                shareWhatsApp(message);
+            }
+        }
+
+        function shareWhatsApp(text) {
+            const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
         function exportToExcel() {
             const visits = getVisits();
             if (visits.length === 0) {
@@ -2130,7 +2166,19 @@
                 const dt = getFormattedDateTime();
                 const filename = `colaboradores_${dt.full}.xlsx`;
 
-                XLSX.writeFile(wb, filename);
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 200);
+
                 showToast(`📊 ${filename} descargado`, 'success');
             } catch (e) {
                 showToast('❌ Error al generar Excel', 'error');
@@ -2278,6 +2326,106 @@
 
                 doc.save(filename);
                 showToast(`📄 ${filename} descargado`, 'success');
+            } catch (e) {
+                showToast('❌ Error al generar PDF', 'error');
+                console.error(e);
+            }
+        }
+
+        
+        function shareExcelWhatsApp() {
+            const visits = getVisits();
+            if (visits.length === 0) { showToast('❌ No hay datos', 'error'); return; }
+            try {
+                const data = getExportData();
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
+                const dt = getFormattedDateTime();
+                const filename = `colaboradores_${dt.full}.xlsx`;
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const msg = '📊 Registro de Colaboradores\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
+                shareFile(blob, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', msg);
+            } catch (e) {
+                showToast('❌ Error', 'error');
+                console.error(e);
+            }
+        }
+
+        function sharePDFWhatsApp() {
+            const visits = getVisits();
+            if (visits.length === 0) { showToast('❌ No hay datos', 'error'); return; }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                const dt = getFormattedDateTime();
+                const filename = `colaboradores_${dt.full}.pdf`;
+                doc.setFontSize(18);
+                doc.text('Registro de Colaboradores', 14, 20);
+                doc.setFontSize(10);
+                doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
+                doc.text(`Total registros: ${visits.length}`, 14, 34);
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const data = visits.map(v => {
+                    const fechasDesde = [];
+                    const fechasHasta = [];
+                    if (v.desayuno && v.desayunoDesde) fechasDesde.push(v.desayunoDesde);
+                    if (v.almuerzo && v.almuerzoDesde) fechasDesde.push(v.almuerzoDesde);
+                    if (v.cena && v.cenaDesde) fechasDesde.push(v.cenaDesde);
+                    if (v.desayuno && v.desayunoHasta) fechasHasta.push(v.desayunoHasta);
+                    if (v.almuerzo && v.almuerzoHasta) fechasHasta.push(v.almuerzoHasta);
+                    if (v.cena && v.cenaHasta) fechasHasta.push(v.cenaHasta);
+                    fechasDesde.sort();
+                    fechasHasta.sort();
+                    return [
+                        v.fecha, v.horaIngreso, v.nombre, v.dni || '-', v.movilidad, v.placa,
+                        v.empresa || '-', v.aQuienColaborador, v.quienAutoriza, v.horaSalida || '-',
+                        v.motivoSalida || '-', v.status === 'active' ? 'Interno' : 'Completada',
+                        v.hospedaje || 'NO', v.desayuno ? 'Sí' : 'No', v.almuerzo ? 'Sí' : 'No',
+                        v.cena ? 'Sí' : 'No', fechasDesde[0] || '-', fechasHasta[fechasHasta.length - 1] || '-'
+                    ];
+                });
+                doc.autoTable({ head: headers, body: data, startY: 40, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [220, 38, 38], textColor: 255 }, alternateRowStyles: { fillColor: [248, 249, 250] }, margin: { top: 40 } });
+                const pdfBlob = doc.output('blob');
+                const msg = '📄 Registro de Colaboradores (PDF)\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
+                shareFile(pdfBlob, filename, 'application/pdf', msg);
+            } catch (e) {
+                showToast('❌ Error al generar PDF', 'error');
+                console.error(e);
+            }
+        }
+
+        function shareComidasPDFWhatsApp() {
+            const visits = getVisits();
+            if (visits.length === 0) { showToast('❌ No hay datos', 'error'); return; }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait' });
+                const dt = getFormattedDateTime();
+                const filename = `reporte_comidas_${dt.full}.pdf`;
+                const colaboradores = {};
+                visits.forEach(v => {
+                    const key = v.nombre;
+                    if (!colaboradores[key]) {
+                        colaboradores[key] = { nombre: v.nombre, dni: v.dni || '-', empresa: v.empresa || '-', desayuno: 0, almuerzo: 0, cena: 0, total: 0 };
+                    }
+                    if (v.desayuno) { colaboradores[key].desayuno++; colaboradores[key].total++; }
+                    if (v.almuerzo) { colaboradores[key].almuerzo++; colaboradores[key].total++; }
+                    if (v.cena) { colaboradores[key].cena++; colaboradores[key].total++; }
+                });
+                const lista = Object.values(colaboradores).sort((a, b) => b.total - a.total);
+                doc.setFontSize(18);
+                doc.text('Reporte de Comidas por Colaborador', 14, 20);
+                doc.setFontSize(10);
+                doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
+                doc.text(`Total colaboradores: ${lista.length}`, 14, 34);
+                const headers = [['Nombre', 'DNI', 'Empresa', 'Desayuno', 'Almuerzo', 'Cena', 'Total']];
+                const data = lista.map(c => [c.nombre, c.dni, c.empresa, c.desayuno, c.almuerzo, c.cena, c.total]);
+                doc.autoTable({ head: headers, body: data, startY: 40, styles: { fontSize: 10, cellPadding: 3 }, headStyles: { fillColor: [220, 38, 38], textColor: 255 }, alternateRowStyles: { fillColor: [248, 249, 250] }, margin: { top: 40 } });
+                const pdfBlob = doc.output('blob');
+                const msg = '🍽️ Reporte de Comidas por Colaborador\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal colaboradores: ' + lista.length;
+                shareFile(pdfBlob, filename, 'application/pdf', msg);
             } catch (e) {
                 showToast('❌ Error al generar PDF', 'error');
                 console.error(e);
