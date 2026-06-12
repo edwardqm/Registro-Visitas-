@@ -11,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -836,12 +835,7 @@
 
                 <div class="form-group" id="dniGroup">
                     <label>DNI / Documento</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList" inputmode="numeric" pattern="[0-9]*" style="flex:1;">
-                        <button type="button" class="btn-icon" onclick="openQRScanner()" title="Escanear código QR / Barra" style="width:48px; height:48px; flex-shrink:0;">
-                            📷
-                        </button>
-                    </div>
+                    <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList" inputmode="numeric" pattern="[0-9]*">
                     <datalist id="dniList"></datalist>
                 </div>
 
@@ -996,7 +990,7 @@
         <div class="dev-icon">👨‍💻</div>
         <h3>Edward Quezada M.</h3>
         <div class="dev-role">Desarrollador de la aplicación</div>
-        <span class="version">Versión 4.0</span>
+        <span class="version">Versión 3.1.2</span>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -1254,20 +1248,7 @@
         </div>
     </div>
 
-        <div class="modal-overlay" id="qrModal" onclick="if(event.target===this)closeQRScanner()">
-        <div class="modal" onclick="event.stopPropagation()" style="max-width:500px; border-radius:24px 24px 0 0;">
-            <div class="modal-header">
-                <h3 class="modal-title">📷 Escanear Código QR / Barra</h3>
-                <button type="button" class="modal-close" onclick="closeQRScanner()">✕</button>
-            </div>
-            <div style="text-align:center; padding:10px 0;">
-                <div id="qr-reader" style="width:100%; max-width:400px; margin:0 auto; border-radius:16px; overflow:hidden;"></div>
-                <p style="color:var(--text-muted); font-size:13px; margin-top:12px;">Enfoca el código dentro del recuadro</p>
-            </div>
-        </div>
-    </div>
-
-<div class="modal-overlay" id="exportModal" onclick="if(event.target===this)closeModal('exportModal')">
+    <div class="modal-overlay" id="exportModal" onclick="if(event.target===this)closeModal('exportModal')">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 class="modal-title">📤 Exportar Datos</h3>
@@ -1468,55 +1449,6 @@
             toggle('editDesayuno');
             toggle('editAlmuerzo');
             toggle('editCena');
-        }
-
-        let qrScanner = null;
-
-        function openQRScanner() {
-            const modal = document.getElementById('qrModal');
-            modal.style.display = 'flex';
-            void modal.offsetHeight;
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-
-            if (!qrScanner) {
-                qrScanner = new Html5Qrcode('qr-reader');
-            }
-
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            qrScanner.start(
-                { facingMode: 'environment' },
-                config,
-                onQRScan,
-                (errorMessage) => { /* ignorar errores de frame */ }
-            ).catch(err => {
-                showToast('❌ No se pudo acceder a la cámara: ' + err, 'error');
-                closeQRScanner();
-            });
-        }
-
-        function closeQRScanner() {
-            if (qrScanner) {
-                qrScanner.stop().then(() => {
-                    qrScanner.clear();
-                    qrScanner = null;
-                }).catch(() => {});
-            }
-            const modal = document.getElementById('qrModal');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-            }, 300);
-        }
-
-        function onQRScan(decodedText, decodedResult) {
-            // Limpiar el texto escaneado (quitar espacios, tomar solo números si es DNI)
-            let code = decodedText.trim().toUpperCase();
-            // Si el código tiene solo números y letras, lo usamos directamente
-            document.getElementById('dni').value = code;
-            closeQRScanner();
-            showToast('✅ Código escaneado: ' + code, 'success');
         }
 
         function init() {
