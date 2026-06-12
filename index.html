@@ -6,11 +6,12 @@
     <meta name="theme-color" content="#dc2626">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Registro de Colaboradores</title>
+    <title>Sistema de Control de Accesos</title>
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUmVnaXN0cm8gZGUgVmlzaXRhcyIsInNob3J0X25hbWUiOiJWaXNpdGFzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEifQ==">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -768,7 +769,7 @@
             <div class="logo">
                 <div class="logo-icon"><img src="data:image/jpeg;base64,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" style="width:32px;height:32px;border-radius:8px;object-fit:contain;"></div>
                 <div class="logo-text">
-                    <h1>Registro de Colaboradores</h1>
+                    <h1>Sistema de Control de Accesos</h1>
                     <span>Seguridad Patrimonial — Control de ingreso</span>
                 </div>
             </div>
@@ -824,9 +825,23 @@
                     <datalist id="nombreList"></datalist>
                 </div>
 
+                <div class="form-group">
+                    <label>Tipo de Personal</label>
+                    <select id="tipoPersonal" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="PROPIO">🏭 Personal Propio</option>
+                        <option value="EXTERNO">🚪 Personal Externo</option>
+                    </select>
+                </div>
+
                 <div class="form-group" id="dniGroup">
                     <label>DNI / Documento</label>
-                    <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList" inputmode="numeric" pattern="[0-9]*">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" id="dni" placeholder="Número de DNI o documento" required list="dniList" inputmode="numeric" pattern="[0-9]*" style="flex:1;">
+                        <button type="button" class="btn-icon" onclick="openQRScanner()" title="Escanear código QR / Barra" style="width:48px; height:48px; flex-shrink:0;">
+                            📷
+                        </button>
+                    </div>
                     <datalist id="dniList"></datalist>
                 </div>
 
@@ -981,7 +996,7 @@
         <div class="dev-icon">👨‍💻</div>
         <h3>Edward Quezada M.</h3>
         <div class="dev-role">Desarrollador de la aplicación</div>
-        <span class="version">Versión 3.1</span>
+        <span class="version">Versión 4.0</span>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -1075,6 +1090,14 @@
                     <input type="text" id="editNombre" required list="editNombreList" oninput="autofillEditFromName(this.value)">
                     <datalist id="editNombreList"></datalist>
                 </div>
+
+                <div class="form-group">
+                    <label>Tipo de Personal</label>
+                    <select id="editTipoPersonal" required>
+                        <option value="PROPIO">🏭 Personal Propio</option>
+                        <option value="EXTERNO">🚪 Personal Externo</option>
+                    </select>
+                </div>
                 <div class="form-group" id="editDniGroup">
                     <label>DNI / Documento</label>
                     <input type="text" id="editDni" placeholder="Número de DNI o documento" required list="editDniList" inputmode="numeric" pattern="[0-9]*">
@@ -1122,73 +1145,7 @@
                     <textarea id="editObservaciones"></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label>¿Se hospedará?</label>
-                    <select id="hospedaje" required >
-                        <option value="">Seleccionar...</option>
-                        <option value="NO">❌ No</option>
-                        <option value="SI">✅ Sí</option>
-                    </select>
-                </div>
-
-                <div id="comidasSection">
-                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
-                        <span>🍽️</span>
-                        Servicio de comidas
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="desayuno" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍳 Desayuno</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="desayunoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="desayunoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="almuerzo" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍛 Almuerzo</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="almuerzoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="almuerzoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="cena" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍽️ Cena</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="cenaDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="cenaHasta">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                
                 
                 <div class="form-group">
                     <label>¿Se hospedará?</label>
@@ -1256,6 +1213,39 @@
                     </div>
                 </div>
 
+                <div id="editSalidaSection" style="display:none;">
+                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
+                        <span>🚪</span>
+                        Datos de Salida
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha Salida</label>
+                            <input type="date" id="editFechaSalida">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora Salida</label>
+                            <input type="time" id="editHoraSalida">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Motivo Salida</label>
+                        <select id="editMotivoSalida">
+                            <option value="">Seleccionar...</option>
+                            <option value="FIN DE VISITA TÉCNICA">🔧 Fin de visita técnica</option>
+                            <option value="FIN DE ASISTENCIA">🤝 Fin de asistencia</option>
+                            <option value="FIN DE COMISIÓN">📋 Fin de comisión</option>
+                            <option value="PERMISO">📋 Permiso</option>
+                            <option value="EMERGENCIA">🚨 Emergencia</option>
+                            <option value="OTRO MOTIVO">📋 Otro motivo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Observaciones de Salida</label>
+                        <textarea id="editObservacionesSalida"></textarea>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-primary">
                     <span>💾</span>
                     Actualizar Registro
@@ -1264,7 +1254,20 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="exportModal" onclick="if(event.target===this)closeModal('exportModal')">
+        <div class="modal-overlay" id="qrModal" onclick="if(event.target===this)closeQRScanner()">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width:500px; border-radius:24px 24px 0 0;">
+            <div class="modal-header">
+                <h3 class="modal-title">📷 Escanear Código QR / Barra</h3>
+                <button type="button" class="modal-close" onclick="closeQRScanner()">✕</button>
+            </div>
+            <div style="text-align:center; padding:10px 0;">
+                <div id="qr-reader" style="width:100%; max-width:400px; margin:0 auto; border-radius:16px; overflow:hidden;"></div>
+                <p style="color:var(--text-muted); font-size:13px; margin-top:12px;">Enfoca el código dentro del recuadro</p>
+            </div>
+        </div>
+    </div>
+
+<div class="modal-overlay" id="exportModal" onclick="if(event.target===this)closeModal('exportModal')">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 class="modal-title">📤 Exportar Datos</h3>
@@ -1467,6 +1470,55 @@
             toggle('editCena');
         }
 
+        let qrScanner = null;
+
+        function openQRScanner() {
+            const modal = document.getElementById('qrModal');
+            modal.style.display = 'flex';
+            void modal.offsetHeight;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            if (!qrScanner) {
+                qrScanner = new Html5Qrcode('qr-reader');
+            }
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            qrScanner.start(
+                { facingMode: 'environment' },
+                config,
+                onQRScan,
+                (errorMessage) => { /* ignorar errores de frame */ }
+            ).catch(err => {
+                showToast('❌ No se pudo acceder a la cámara: ' + err, 'error');
+                closeQRScanner();
+            });
+        }
+
+        function closeQRScanner() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    qrScanner.clear();
+                    qrScanner = null;
+                }).catch(() => {});
+            }
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        function onQRScan(decodedText, decodedResult) {
+            // Limpiar el texto escaneado (quitar espacios, tomar solo números si es DNI)
+            let code = decodedText.trim().toUpperCase();
+            // Si el código tiene solo números y letras, lo usamos directamente
+            document.getElementById('dni').value = code;
+            closeQRScanner();
+            showToast('✅ Código escaneado: ' + code, 'success');
+        }
+
         function init() {
             const now = new Date();
             document.getElementById('fecha').value = now.toISOString().split('T')[0];
@@ -1606,6 +1658,7 @@
                 aQuienColaborador: document.getElementById('aQuienColaborador').value,
                 quienAutoriza: document.getElementById('quienAutoriza').value.trim().toUpperCase(),
                 observaciones: document.getElementById('observaciones').value.trim().toUpperCase(),
+                tipoPersonal: document.getElementById('tipoPersonal').value,
                 hospedaje: hospedaje,
                 desayuno: document.getElementById('desayuno').checked,
                 desayunoDesde: document.getElementById('desayunoDesde').value,
@@ -1632,6 +1685,11 @@
             agregarOActualizarColaborador(visit.nombre, visit.dni, visit.empresa, visit.quienAutoriza);
 
             document.getElementById('visitForm').reset();
+            const now = new Date();
+            document.getElementById('fecha').value = now.toISOString().split('T')[0];
+            document.getElementById('horaIngreso').value = now.toTimeString().slice(0, 5);
+            togglePlacaField();
+            toggleComidaFields();
             updateDatalists();
             updateStats();
             renderActiveVisits();
@@ -1696,6 +1754,13 @@
                             </div>
                         </div>
                         <div class="visit-detail">
+                            <div class="icon">👤</div>
+                            <div class="info">
+                                <strong>Tipo</strong>
+                                <span>${visit.tipoPersonal === 'PROPIO' ? '🏭 Propio' : '🚪 Externo'}</span>
+                            </div>
+                        </div>
+                        <div class="visit-detail">
                             <div class="icon">📋</div>
                             <div class="info">
                                 <strong>Motivo</strong>
@@ -1737,17 +1802,11 @@
                             <button type="button" class="btn-small btn-edit" onclick="openEditModal('${visit.id}')">
                                 <span>✏️</span> Editar
                             </button>
-                            <button type="button" class="btn-small btn-delete" onclick="confirmDelete('${visit.id}')">
-                                <span>🗑️</span>
-                            </button>
                         </div>
                     ` : `
                         <div class="visit-actions">
                             <button type="button" class="btn-small btn-edit" onclick="openEditModal('${visit.id}')">
                                 <span>✏️</span> Editar
-                            </button>
-                            <button type="button" class="btn-small btn-delete" onclick="confirmDelete('${visit.id}')">
-                                <span>🗑️</span> Eliminar
                             </button>
                         </div>
                     `}
@@ -1784,7 +1843,8 @@
                 (v.dni && v.dni.toUpperCase().includes(searchTerm)) ||
                 (v.empresa && v.empresa.toUpperCase().includes(searchTerm)) ||
                 v.aQuienColaborador.toUpperCase().includes(searchTerm) ||
-                v.placa.toUpperCase().includes(searchTerm)
+                v.placa.toUpperCase().includes(searchTerm) ||
+                (v.tipoPersonal && v.tipoPersonal.toUpperCase().includes(searchTerm))
             );
 
             searchTitle.textContent = `Resultados para "${searchInput.value}"`;
@@ -1927,6 +1987,7 @@
             document.getElementById('editFecha').value = visit.fecha;
             document.getElementById('editHoraIngreso').value = visit.horaIngreso;
             document.getElementById('editNombre').value = visit.nombre;
+            document.getElementById('editTipoPersonal').value = visit.tipoPersonal || 'EXTERNO';
             document.getElementById('editMovilidad').value = visit.movilidad;
             document.getElementById('editDni').value = visit.dni || '';
             document.getElementById('editPlaca').value = visit.placa === '*****' ? '' : visit.placa;
@@ -1977,6 +2038,7 @@
                 visits[index].fecha = document.getElementById('editFecha').value;
                 visits[index].horaIngreso = document.getElementById('editHoraIngreso').value;
                 visits[index].nombre = document.getElementById('editNombre').value.trim().toUpperCase();
+                visits[index].tipoPersonal = document.getElementById('editTipoPersonal').value;
                 visits[index].dni = dni.toUpperCase();
                 visits[index].movilidad = movilidad;
                 visits[index].placa = (document.getElementById('editPlaca').value.trim() || 'N/A').toUpperCase();
@@ -2146,6 +2208,7 @@
                     'Fecha': v.fecha,
                     'Hora Ingreso': v.horaIngreso,
                     'Nombre': v.nombre,
+                    'Tipo Personal': v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo',
                     'DNI': v.dni || '',
                     'Movilidad': v.movilidad,
                     'Placa': v.placa,
@@ -2235,13 +2298,13 @@
                 const filename = `colaboradores_${dt.full}.pdf`;
 
                 doc.setFontSize(18);
-                doc.text('Registro de Colaboradores', 14, 20);
+                doc.text('Sistema de Control de Accesos', 14, 20);
 
                 doc.setFontSize(10);
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
 
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'Tipo', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
                 const data = visits.map(v => {
                     const fechasDesde = [];
                     const fechasHasta = [];
@@ -2257,6 +2320,7 @@
                         v.fecha,
                         v.horaIngreso,
                         v.nombre,
+                        v.tipoPersonal === 'PROPIO' ? 'Propio' : 'Externo',
                         v.dni || '-',
                         v.movilidad,
                         v.placa,
@@ -2380,7 +2444,7 @@
                 const filename = `colaboradores_${dt.full}.xlsx`;
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
                 const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const msg = '📊 Registro de Colaboradores\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
+                const msg = '📊 Sistema de Control de Accesos\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
                 shareFile(blob, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', msg);
             } catch (e) {
                 showToast('❌ Error', 'error');
@@ -2397,11 +2461,11 @@
                 const dt = getFormattedDateTime();
                 const filename = `colaboradores_${dt.full}.pdf`;
                 doc.setFontSize(18);
-                doc.text('Registro de Colaboradores', 14, 20);
+                doc.text('Sistema de Control de Accesos', 14, 20);
                 doc.setFontSize(10);
                 doc.text(`Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}`, 14, 28);
                 doc.text(`Total registros: ${visits.length}`, 14, 34);
-                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
+                const headers = [['Fecha', 'Hora Ing.', 'Nombre', 'Tipo', 'DNI', 'Movilidad', 'Placa', 'Empresa', 'Motivo Ing.', 'Procedencia', 'Fecha Sal.', 'Hora Sal.', 'Motivo Sal.', 'Estado', 'Hosp.', 'Desay.', 'Almuer.', 'Cena', 'Desde', 'Hasta']];
                 const data = visits.map(v => {
                     const fechasDesde = [];
                     const fechasHasta = [];
@@ -2414,7 +2478,7 @@
                     fechasDesde.sort();
                     fechasHasta.sort();
                     return [
-                        v.fecha, v.horaIngreso, v.nombre, v.dni || '-', v.movilidad, v.placa,
+                        v.fecha, v.horaIngreso, v.nombre, v.tipoPersonal === 'PROPIO' ? 'Propio' : 'Externo', v.dni || '-', v.movilidad, v.placa,
                         v.empresa || '-', v.aQuienColaborador, v.quienAutoriza, v.horaSalida || '-',
                         v.motivoSalida || '-', v.status === 'active' ? 'Interno' : 'Completada',
                         v.hospedaje || 'NO', v.desayuno ? 'Sí' : 'No', v.almuerzo ? 'Sí' : 'No',
@@ -2423,7 +2487,7 @@
                 });
                 doc.autoTable({ head: headers, body: data, startY: 40, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [220, 38, 38], textColor: 255 }, alternateRowStyles: { fillColor: [248, 249, 250] }, margin: { top: 40 } });
                 const pdfBlob = doc.output('blob');
-                const msg = '📄 Registro de Colaboradores (PDF)\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
+                const msg = '📄 Sistema de Control de Accesos (PDF)\nGenerado: ' + dt.dateStr + ' ' + dt.timeStr.replace('-', ':') + '\nTotal registros: ' + visits.length;
                 shareFile(pdfBlob, filename, 'application/pdf', msg);
             } catch (e) {
                 showToast('❌ Error al generar PDF', 'error');
