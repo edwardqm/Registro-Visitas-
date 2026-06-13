@@ -774,7 +774,7 @@
             </div>
             <div class="header-actions">
                 <button type="button" class="btn-icon" onclick="showExportModal()" title="Exportar">📤</button>
-                <button type="button" class="btn-icon" onclick="clearAllData()" title="Borrar todo">🗑️</button>
+                
             </div>
         </div>
         <div class="stats-row">
@@ -990,7 +990,7 @@
         <div class="dev-icon">👨‍💻</div>
         <h3>Edward Quezada M.</h3>
         <div class="dev-role">Desarrollador de la aplicación</div>
-        <span class="version">Versión 3.1.4</span>
+        <span class="version">Versión 3.1.5</span>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -2028,40 +2028,10 @@
         }
 
         // Variables para la confirmación con clave
-        let pendingDeleteId = null;
-        let pendingClearAll = false;
 
-        function confirmDelete(id) {
-            pendingDeleteId = id;
-            pendingClearAll = false;
-            document.getElementById('confirmAction').value = 'delete';
-            document.getElementById('confirmId').value = id;
-            document.getElementById('confirmModalTitle').textContent = '🔒 Eliminar Registro';
-            document.getElementById('confirmClave').value = '';
+        
 
-            const modal = document.getElementById('confirmModal');
-            modal.style.display = 'flex';
-            void modal.offsetHeight;
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => document.getElementById('confirmClave').focus(), 100);
-        }
-
-        function clearAllData() {
-            pendingDeleteId = null;
-            pendingClearAll = true;
-            document.getElementById('confirmAction').value = 'clearAll';
-            document.getElementById('confirmId').value = '';
-            document.getElementById('confirmModalTitle').textContent = '🔒 Eliminar Todos los Registros';
-            document.getElementById('confirmClave').value = '';
-
-            const modal = document.getElementById('confirmModal');
-            modal.style.display = 'flex';
-            void modal.offsetHeight;
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => document.getElementById('confirmClave').focus(), 100);
-        }
+        
 
         function handleConfirmAction(event) {
             if (event) event.preventDefault();
@@ -2085,29 +2055,9 @@
                 return false;
             }
 
-            if (action === 'delete') {
-                const id = document.getElementById('confirmId').value;
-                const visits = getVisits().filter(v => v.id !== id);
-                saveVisits(visits);
-                updateDatalists();
-                updateStats();
-                renderActiveVisits();
-                renderHistoryVisits();
-                performSearch();
-                showToast('🗑️ Registro eliminado', 'success');
-            } else if (action === 'clearAll') {
-                localStorage.removeItem(STORAGE_KEY);
-                updateDatalists();
-                updateStats();
-                renderActiveVisits();
-                renderHistoryVisits();
-                performSearch();
-                showToast('🗑️ Todos los datos eliminados', 'success');
-            }
+            // La función de eliminar registros ha sido deshabilitada
 
             closeModal('confirmModal');
-            pendingDeleteId = null;
-            pendingClearAll = false;
             pendingEditId = null;
             return false;
         }
