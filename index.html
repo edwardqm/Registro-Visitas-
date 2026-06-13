@@ -990,7 +990,7 @@
         <div class="dev-icon">👨‍💻</div>
         <h3>Edward Quezada M.</h3>
         <div class="dev-role">Desarrollador de la aplicación</div>
-        <span class="version">Versión 3.1.2</span>
+        <span class="version">Versión 3.1.4</span>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -1452,9 +1452,19 @@
         }
 
         function init() {
-            const now = new Date();
-            document.getElementById('fecha').value = now.toISOString().split('T')[0];
-            document.getElementById('horaIngreso').value = now.toTimeString().slice(0, 5);
+            const updateDateTime = () => {
+                const now = new Date();
+                const fechaEl = document.getElementById('fecha');
+                const horaEl = document.getElementById('horaIngreso');
+                if (fechaEl && document.activeElement !== fechaEl) {
+                    fechaEl.value = now.toISOString().split('T')[0];
+                }
+                if (horaEl && document.activeElement !== horaEl) {
+                    horaEl.value = now.toTimeString().slice(0, 5);
+                }
+            };
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
             togglePlacaField();
             toggleComidaFields();
             updateDatalists();
