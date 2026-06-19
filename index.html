@@ -770,7 +770,55 @@
         .dev-info .dev-icon img {
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-    </style>
+    
+        /* Mayúsculas automáticas en todos los campos de texto */
+        input[type="text"],
+        input[type="search"],
+        input[type="password"],
+        textarea,
+        select {
+            text-transform: uppercase;
+        }
+        input[type="text"]::placeholder,
+        textarea::placeholder {
+            text-transform: none;
+        }
+        /* Botones de acción rápida */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px;
+            margin-bottom: 16px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 12px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--dark-light);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .btn-action:active { transform: scale(0.97); background: var(--dark-lighter); }
+        .btn-action .action-icon { font-size: 22px; }
+        .btn-action.save { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); color: var(--success); }
+        .btn-action.share { border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); color: var(--primary); }
+        .btn-action.print { border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); color: var(--warning); }
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .header, .tabs, .bottom-nav, .btn-icon, .visit-actions, .modal-overlay, .btn-action, .dev-info { display: none !important; }
+            .section { display: block !important; }
+            .visit-card { border: 1px solid #ccc; page-break-inside: avoid; }
+            .form-card { display: none; }
+        }
+</style>
 </head>
 <body>
     <header class="header">
@@ -809,6 +857,21 @@
         <button class="tab" onclick="switchTab('active')">🟡 Activas</button>
         <button class="tab" onclick="switchTab('history')">📋 Historial</button>
     </div>
+    <div class="action-buttons">
+        <button type="button" class="btn-action save" onclick="guardarDatos()">
+            <span class="action-icon">💾</span>
+            <span>Guardar</span>
+        </button>
+        <button type="button" class="btn-action share" onclick="compartirDatos()">
+            <span class="action-icon">📲</span>
+            <span>Compartir</span>
+        </button>
+        <button type="button" class="btn-action print" onclick="imprimirReporte()">
+            <span class="action-icon">🖨️</span>
+            <span>Imprimir</span>
+        </button>
+    </div>
+
 
     <section id="section-new" class="section active">
         <div class="form-card animate-slide-up">
@@ -1471,7 +1534,210 @@
             toggle('editCena');
         }
 
-        function init() {
+        
+        // ===== FUNCIONES DE GUARDAR, COMPARTIR E IMPRIMIR =====
+
+        function guardarDatos() {
+            const visits = getVisits();
+            if (visits.length === 0) {
+                showToast('❌ No hay datos para guardar', 'error');
+                return;
+            }
+            try {
+                const data = {
+                    empresa: EMPRESA_NOMBRE,
+                    subtitulo: EMPRESA_SUBTITULO,
+                    fechaExportacion: new Date().toISOString(),
+                    totalRegistros: visits.length,
+                    registros: visits
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const dt = getFormattedDateTime();
+                const filename = `backup_colaboradores_${dt.full}.json`;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 200);
+                showToast(`💾 ${filename} guardado`, 'success');
+            } catch (e) {
+                showToast('❌ Error al guardar', 'error');
+                console.error(e);
+            }
+        }
+
+        function compartirDatos() {
+            const visits = getVisits();
+            if (visits.length === 0) {
+                showToast('❌ No hay datos para compartir', 'error');
+                return;
+            }
+            const dt = getFormattedDateTime();
+            let mensaje = `📋 ${EMPRESA_NOMBRE}\n${EMPRESA_SUBTITULO}\n\n📊 RESUMEN DE INGRESOS\n`;
+            mensaje += `Generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}\n`;
+            mensaje += `Total registros: ${visits.length}\n\n`;
+
+            const activos = visits.filter(v => v.status === 'active');
+            const completados = visits.filter(v => v.status === 'completed');
+
+            mensaje += `🟢 INTERNOS: ${activos.length}\n`;
+            mensaje += `🔴 COMPLETADOS: ${completados.length}\n\n`;
+
+            if (activos.length > 0) {
+                mensaje += `🟢 COLABORADORES INTERNOS:\n`;
+                activos.slice(0, 10).forEach(v => {
+                    mensaje += `• ${v.nombre} — ${v.aQuienColaborador}\n`;
+                });
+                if (activos.length > 10) mensaje += `... y ${activos.length - 10} más\n`;
+                mensaje += `\n`;
+            }
+
+            if (completados.length > 0) {
+                mensaje += `🔴 ÚLTIMOS COMPLETADOS:\n`;
+                completados.slice(0, 5).forEach(v => {
+                    mensaje += `• ${v.nombre} — Salió: ${v.fechaSalida || '?'} ${v.horaSalida || '?'}\n`;
+                });
+            }
+
+            shareWhatsApp(mensaje);
+        }
+
+        function imprimirReporte() {
+            const visits = getVisits();
+            if (visits.length === 0) {
+                showToast('❌ No hay datos para imprimir', 'error');
+                return;
+            }
+
+            const dt = getFormattedDateTime();
+            const activos = visits.filter(v => v.status === 'active');
+            const completados = visits.filter(v => v.status === 'completed');
+
+            let printHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Reporte de Ingresos</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                        .header-print { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #dc2626; padding-bottom: 15px; }
+                        .header-print h1 { margin: 0; font-size: 20px; color: #dc2626; }
+                        .header-print h2 { margin: 5px 0 0; font-size: 14px; color: #666; font-weight: normal; }
+                        .header-print .date { font-size: 12px; color: #999; margin-top: 8px; }
+                        .stats { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
+                        .stat { text-align: center; }
+                        .stat .num { font-size: 28px; font-weight: bold; color: #dc2626; }
+                        .stat .lbl { font-size: 12px; color: #666; text-transform: uppercase; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th { background: #dc2626; color: white; padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; }
+                        td { padding: 6px 8px; border-bottom: 1px solid #ddd; }
+                        tr:nth-child(even) { background: #f9f9f9; }
+                        .status-active { color: #f59e0b; font-weight: bold; }
+                        .status-completed { color: #10b981; font-weight: bold; }
+                        .section-title { font-size: 14px; font-weight: bold; margin: 25px 0 10px; color: #dc2626; border-left: 4px solid #dc2626; padding-left: 10px; }
+                        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 15px; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-print">
+                        <h1>${EMPRESA_NOMBRE}</h1>
+                        <h2>${EMPRESA_SUBTITULO} — Sistema de Control de Accesos</h2>
+                        <div class="date">Reporte generado: ${dt.dateStr} ${dt.timeStr.replace('-', ':')}</div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="num">${visits.length}</div>
+                            <div class="lbl">Total</div>
+                        </div>
+                        <div class="stat">
+                            <div class="num" style="color:#f59e0b">${activos.length}</div>
+                            <div class="lbl">Internos</div>
+                        </div>
+                        <div class="stat">
+                            <div class="num" style="color:#10b981">${completados.length}</div>
+                            <div class="lbl">Completados</div>
+                        </div>
+                    </div>
+            `;
+
+            if (activos.length > 0) {
+                printHTML += `<div class="section-title">🟢 COLABORADORES INTERNOS (${activos.length})</div>`;
+                printHTML += `<table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>DNI</th><th>Movilidad</th><th>Placa</th><th>Empresa</th><th>Motivo</th><th>Procedencia</th><th>Tipo</th></tr></thead><tbody>`;
+                activos.forEach(v => {
+                    printHTML += `<tr>
+                        <td>${v.fecha}</td>
+                        <td>${v.horaIngreso}</td>
+                        <td><strong>${v.nombre}</strong></td>
+                        <td>${v.dni || '-'}</td>
+                        <td>${v.movilidad}</td>
+                        <td>${v.placa || '-'}</td>
+                        <td>${v.empresa || '-'}</td>
+                        <td>${v.aQuienColaborador}</td>
+                        <td>${v.quienAutoriza}</td>
+                        <td class="status-active">INTERNO</td>
+                    </tr>`;
+                });
+                printHTML += `</tbody></table>`;
+            }
+
+            if (completados.length > 0) {
+                printHTML += `<div class="section-title">🔴 REGISTROS COMPLETADOS (${completados.length})</div>`;
+                printHTML += `<table><thead><tr><th>Fecha Ing.</th><th>Hora Ing.</th><th>Nombre</th><th>DNI</th><th>Fecha Sal.</th><th>Hora Sal.</th><th>Motivo Sal.</th><th>Empresa</th></tr></thead><tbody>`;
+                completados.forEach(v => {
+                    printHTML += `<tr>
+                        <td>${v.fecha}</td>
+                        <td>${v.horaIngreso}</td>
+                        <td><strong>${v.nombre}</strong></td>
+                        <td>${v.dni || '-'}</td>
+                        <td>${v.fechaSalida || '-'}</td>
+                        <td>${v.horaSalida || '-'}</td>
+                        <td>${v.motivoSalida || '-'}</td>
+                        <td>${v.empresa || '-'}</td>
+                    </tr>`;
+                });
+                printHTML += `</tbody></table>`;
+            }
+
+            printHTML += `
+                    <div class="footer">
+                        ${EMPRESA_NOMBRE} — ${EMPRESA_SUBTITULO}<br>
+                        Documento generado automáticamente por el Sistema de Control de Accesos
+                    </div>
+                    <div class="no-print" style="text-align:center; margin-top:20px;">
+                        <button onclick="window.print()" style="padding:12px 30px; font-size:16px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer;">🖨️ Imprimir / Guardar PDF</button>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+            showToast('🖨️ Reporte listo para imprimir', 'success');
+        }
+
+        // ===== MAYÚSCULAS AUTOMÁTICAS EN TODOS LOS CAMPOS =====
+        function setupUppercaseInputs() {
+            const textInputs = document.querySelectorAll('input[type="text"], input[type="search"], textarea');
+            textInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const cursorPosition = this.selectionStart;
+                    this.value = this.value.toUpperCase();
+                    this.setSelectionRange(cursorPosition, cursorPosition);
+                });
+            });
+        }
+
+function init() {
+            setupUppercaseInputs();
             const updateDateTime = () => {
                 const now = new Date();
                 const fechaEl = document.getElementById('fecha');
@@ -1995,7 +2261,7 @@
 
             if (index !== -1) {
                 const movilidad = document.getElementById('editMovilidad').value;
-                const dni = document.getElementById('editDni').value.trim();
+                const dni = document.getElementById('editDni').value.trim().toUpperCase();
 
                 visits[index].fecha = document.getElementById('editFecha').value;
                 visits[index].horaIngreso = document.getElementById('editHoraIngreso').value;
