@@ -1404,9 +1404,13 @@
                 <span class="d-icon">🖨️</span>
                 <span>Imprimir</span>
             </button>
-            <button class="detail-action-btn share" onclick="shareDetailPDF()">
+            <button class="detail-action-btn share" onclick="generateDetailPDF()">
                 <span class="d-icon">📄</span>
-                <span>Compartir PDF</span>
+                <span>Generar PDF</span>
+            </button>
+            <button class="detail-action-btn" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.05);color:var(--success);" onclick="shareDetailText()">
+                <span class="d-icon">📤</span>
+                <span>Compartir</span>
             </button>
             <button class="detail-action-btn delete" onclick="confirmDeleteDetail()">
                 <span class="d-icon">🗑️</span>
@@ -2242,9 +2246,9 @@
 
             // Body
             const comidas = [];
-            if (visit.desayuno) comidas.push(`🍳 Desayuno ${visit.desayunoDesde||'?'}→${visit.desayunoHasta||'?'}`);
-            if (visit.almuerzo) comidas.push(`🍛 Almuerzo ${visit.almuerzoDesde||'?'}→${visit.almuerzoHasta||'?'}`);
-            if (visit.cena)     comidas.push(`🍽️ Cena ${visit.cenaDesde||'?'}→${visit.cenaHasta||'?'}`);
+            if (visit.desayuno) comidas.push(formatComida('🍳 Desayuno', visit.desayunoDesde, visit.desayunoHasta));
+            if (visit.almuerzo) comidas.push(formatComida('🍛 Almuerzo', visit.almuerzoDesde, visit.almuerzoHasta));
+            if (visit.cena)     comidas.push(formatComida('🍽️ Cena',     visit.cenaDesde,     visit.cenaHasta));
 
             document.getElementById('detailBody').innerHTML = `
                 <div class="detail-status-bar ${isCompleted ? 'completed' : 'active'}">
@@ -2306,40 +2310,57 @@
         }
 
         // ===== PRINT DETAIL =====
+        // Helper: formato legible de comida con fechas opcionales
+        function formatComida(label, desde, hasta) {
+            if (desde && hasta) {
+                return `${label}: ${formatDate(desde)} → ${formatDate(hasta)}`;
+            } else if (desde) {
+                return `${label}: desde ${formatDate(desde)}`;
+            }
+            return label;
+        }
+
         function printDetailRecord() {
             if (!_detailCurrentId) return;
             const visits = getVisits();
             const v = visits.find(x => x.id === _detailCurrentId);
             if (!v) return;
             const isCompleted = v.status === 'completed';
-            const movilIcon = {'Peatón':'🚶','Auto o camioneta':'🚗','Vehículo particular':'🚙','Moto':'🏍️','Camión':'🚛','Van/Bus':'🚌','Bicicleta':'🚲'}[v.movilidad] || '🚘';
+            const movilLabel = v.movilidad || 'N/A';
             const comidas = [];
-            if (v.desayuno) comidas.push(`🍳 Desayuno ${v.desayunoDesde||'?'} → ${v.desayunoHasta||'?'}`);
-            if (v.almuerzo) comidas.push(`🍛 Almuerzo ${v.almuerzoDesde||'?'} → ${v.almuerzoHasta||'?'}`);
-            if (v.cena)     comidas.push(`🍽️ Cena ${v.cenaDesde||'?'} → ${v.cenaHasta||'?'}`);
+            if (v.desayuno) comidas.push(formatComida('Desayuno', v.desayunoDesde, v.desayunoHasta));
+            if (v.almuerzo) comidas.push(formatComida('Almuerzo', v.almuerzoDesde, v.almuerzoHasta));
+            if (v.cena)     comidas.push(formatComida('Cena',     v.cenaDesde,     v.cenaHasta));
 
-            const printWin = window.open('', '_blank', 'width=800,height=700');
-            printWin.document.write(`
-<!DOCTYPE html><html><head><meta charset="UTF-8">
+            // Crear un iframe oculto para imprimir (funciona en Android Chrome sin popups)
+            const existingFrame = document.getElementById('_printFrame');
+            if (existingFrame) existingFrame.remove();
+
+            const iframe = document.createElement('iframe');
+            iframe.id = '_printFrame';
+            iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;';
+            document.body.appendChild(iframe);
+
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Registro - ${v.nombre}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a2e; padding: 24px; background:#fff; }
-  .header { text-align:center; border-bottom: 2px solid #e53e3e; padding-bottom:14px; margin-bottom:18px; }
-  .company { font-size:18px; font-weight:800; color:#e53e3e; }
-  .subtitle { font-size:12px; color:#666; margin-top:3px; text-transform:uppercase; letter-spacing:1px; }
-  .doc-title { font-size:14px; font-weight:700; margin-top:8px; }
-  .status-bar { display:inline-block; padding:6px 18px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:18px; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a2e; padding: 20px; background:#fff; }
+  .header { text-align:center; border-bottom: 3px solid #dc2626; padding-bottom:12px; margin-bottom:16px; }
+  .company { font-size:17px; font-weight:800; color:#dc2626; }
+  .subtitle { font-size:11px; color:#666; margin-top:3px; text-transform:uppercase; letter-spacing:1px; }
+  .doc-title { font-size:13px; font-weight:700; margin-top:7px; color:#333; }
+  .status-bar { display:inline-block; padding:5px 16px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:16px; }
   .status-active { background:#fef3c7; color:#d97706; border:1px solid #fcd34d; }
   .status-done   { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
-  .section { border: 1px solid #e2e8f0; border-radius:8px; margin-bottom:14px; overflow:hidden; }
-  .section-title { background:#f7fafc; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#718096; padding:8px 14px; border-bottom:1px solid #e2e8f0; }
-  .row { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #f0f0f0; }
+  .section { border: 1px solid #e2e8f0; border-radius:6px; margin-bottom:12px; overflow:hidden; page-break-inside:avoid; }
+  .section-title { background:#f1f5f9; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; padding:7px 12px; border-bottom:1px solid #e2e8f0; }
+  .row { display:flex; justify-content:space-between; padding:7px 12px; border-bottom:1px solid #f0f0f0; }
   .row:last-child { border-bottom:none; }
-  .label { color:#718096; font-size:12px; }
-  .value { font-weight:700; font-size:12px; text-align:right; }
-  .footer { text-align:center; margin-top:20px; font-size:11px; color:#aaa; }
-  @media print { body { padding:10px; } }
+  .label { color:#718096; font-size:11px; min-width:90px; }
+  .value { font-weight:600; font-size:11px; text-align:right; color:#1a1a2e; }
+  .footer { text-align:center; margin-top:16px; font-size:10px; color:#aaa; border-top:1px solid #eee; padding-top:10px; }
+  @media print { body { padding:8px; } }
 </style></head><body>
 <div class="header">
   <div class="company">${EMPRESA_NOMBRE}</div>
@@ -2347,63 +2368,180 @@
   <div class="doc-title">REGISTRO DE CONTROL DE ACCESO</div>
 </div>
 <div style="text-align:center; margin-bottom:14px;">
-  <span class="status-bar ${isCompleted ? 'status-done' : 'status-active'}">${isCompleted ? '✓ COMPLETADO' : '● ACTIVO - DENTRO'}</span>
+  <span class="status-bar ${isCompleted ? 'status-done' : 'status-active'}">${isCompleted ? '✓ COMPLETADO' : '● ACTIVO — DENTRO'}</span>
 </div>
 <div class="section">
-  <div class="section-title">👤 Datos Personales</div>
+  <div class="section-title">Datos Personales</div>
   <div class="row"><span class="label">Nombre</span><span class="value">${v.nombre}</span></div>
   <div class="row"><span class="label">DNI</span><span class="value">${v.dni || 'N/A'}</span></div>
   <div class="row"><span class="label">Tipo</span><span class="value">${v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo'}</span></div>
   <div class="row"><span class="label">Empresa</span><span class="value">${v.empresa || 'N/A'}</span></div>
 </div>
 <div class="section">
-  <div class="section-title">🚪 Ingreso</div>
+  <div class="section-title">Ingreso</div>
   <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fecha)}</span></div>
   <div class="row"><span class="label">Hora</span><span class="value">${v.horaIngreso}</span></div>
-  <div class="row"><span class="label">Motivo</span><span class="value">${v.aQuienColaborador}</span></div>
+  <div class="row"><span class="label">Motivo / Area</span><span class="value">${v.aQuienColaborador}</span></div>
   <div class="row"><span class="label">Procedencia</span><span class="value">${v.quienAutoriza || 'N/A'}</span></div>
-  ${v.observaciones ? `<div class="row"><span class="label">Obs.</span><span class="value">${v.observaciones}</span></div>` : ''}
+  ${v.observaciones ? `<div class="row"><span class="label">Observaciones</span><span class="value">${v.observaciones}</span></div>` : ''}
 </div>
 <div class="section">
-  <div class="section-title">${movilIcon} Movilidad</div>
-  <div class="row"><span class="label">Tipo</span><span class="value">${v.movilidad}</span></div>
-  <div class="row"><span class="label">Placa</span><span class="value">${v.placa || '*****'}</span></div>
+  <div class="section-title">Movilidad</div>
+  <div class="row"><span class="label">Tipo</span><span class="value">${movilLabel}</span></div>
+  <div class="row"><span class="label">Placa</span><span class="value">${v.placa || 'Sin placa'}</span></div>
   ${v.hospedaje && v.hospedaje !== 'NO' ? `<div class="row"><span class="label">Hospedaje</span><span class="value">${v.hospedaje}</span></div>` : ''}
 </div>
-${comidas.length > 0 ? `<div class="section"><div class="section-title">🍽️ Comidas</div>${comidas.map(c=>`<div class="row"><span class="label">${c}</span></div>`).join('')}</div>` : ''}
-${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</div>
-  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fechaSalida||v.fecha)}</span></div>
-  <div class="row"><span class="label">Hora</span><span class="value">${v.horaSalida||'N/A'}</span></div>
-  <div class="row"><span class="label">Motivo</span><span class="value">${v.motivoSalida||'N/A'}</span></div>
-  ${v.observacionesSalida ? `<div class="row"><span class="label">Obs.</span><span class="value">${v.observacionesSalida}</span></div>` : ''}
+${comidas.length > 0 ? `<div class="section"><div class="section-title">Servicio de Comidas</div>${comidas.map(c=>`<div class="row"><span class="label" style="min-width:unset;color:#1a1a2e;">${c}</span></div>`).join('')}</div>` : ''}
+${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
+  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fechaSalida || v.fecha)}</span></div>
+  <div class="row"><span class="label">Hora</span><span class="value">${v.horaSalida || 'N/A'}</span></div>
+  <div class="row"><span class="label">Motivo</span><span class="value">${v.motivoSalida || 'N/A'}</span></div>
+  ${v.observacionesSalida ? `<div class="row"><span class="label">Observaciones</span><span class="value">${v.observacionesSalida}</span></div>` : ''}
 </div>` : ''}
-<div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} · ${EMPRESA_NOMBRE} · ID: ${v.id}</div>
-</body></html>`);
-            printWin.document.close();
-            printWin.focus();
-            setTimeout(() => { printWin.print(); }, 400);
+<div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} &nbsp;|&nbsp; ${EMPRESA_NOMBRE} &nbsp;|&nbsp; ID: ${v.id}</div>
+</body></html>`;
+
+            iframe.onload = () => {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch(e) {
+                    showToast('❌ Error al abrir impresora', 'error');
+                }
+                setTimeout(() => iframe.remove(), 3000);
+            };
+            iframe.srcdoc = html;
         }
 
-        // ===== SHARE AS PDF (via Web Share API or fallback) =====
-        async function shareDetailPDF() {
+        // ===== GENERAR PDF REAL (jsPDF) =====
+        function generateDetailPDF() {
             if (!_detailCurrentId) return;
             const visits = getVisits();
             const v = visits.find(x => x.id === _detailCurrentId);
             if (!v) return;
-
             const isCompleted = v.status === 'completed';
-            const movilIcon = {'Peatón':'🚶','Auto o camioneta':'🚗','Vehículo particular':'🚙','Moto':'🏍️','Camión':'🚛','Van/Bus':'🚌','Bicicleta':'🚲'}[v.movilidad] || '🚘';
             const comidas = [];
-            if (v.desayuno) comidas.push(`🍳 Desayuno ${v.desayunoDesde||'?'}→${v.desayunoHasta||'?'}`);
-            if (v.almuerzo) comidas.push(`🍛 Almuerzo ${v.almuerzoDesde||'?'}→${v.almuerzoHasta||'?'}`);
-            if (v.cena)     comidas.push(`🍽️ Cena ${v.cenaDesde||'?'}→${v.cenaHasta||'?'}`);
+            if (v.desayuno) comidas.push(formatComida('Desayuno', v.desayunoDesde, v.desayunoHasta));
+            if (v.almuerzo) comidas.push(formatComida('Almuerzo', v.almuerzoDesde, v.almuerzoHasta));
+            if (v.cena)     comidas.push(formatComida('Cena',     v.cenaDesde,     v.cenaHasta));
 
-            // Texto del resumen (siempre disponible)
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const W = doc.internal.pageSize.getWidth();
+                let y = 15;
+
+                // ── Cabecera ──
+                doc.setFillColor(220, 38, 38);
+                doc.rect(0, 0, W, 28, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(14); doc.setFont(undefined, 'bold');
+                doc.text(EMPRESA_NOMBRE, W/2, 11, { align: 'center' });
+                doc.setFontSize(8); doc.setFont(undefined, 'normal');
+                doc.text(EMPRESA_SUBTITULO, W/2, 17, { align: 'center' });
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text('REGISTRO DE CONTROL DE ACCESO', W/2, 24, { align: 'center' });
+                y = 36;
+
+                // ── Badge estado ──
+                const badgeColor = isCompleted ? [209,250,229] : [254,243,199];
+                const badgeText  = isCompleted ? 'COMPLETADO' : 'ACTIVO — DENTRO';
+                const badgeTColor = isCompleted ? [6,95,70] : [180,95,6];
+                doc.setFillColor(...badgeColor);
+                doc.roundedRect(W/2-30, y-5, 60, 9, 3, 3, 'F');
+                doc.setTextColor(...badgeTColor);
+                doc.setFontSize(9); doc.setFont(undefined, 'bold');
+                doc.text(badgeText, W/2, y+1, { align: 'center' });
+                y += 12;
+
+                // ── Helper: sección con tabla ──
+                const addSection = (title, rows) => {
+                    doc.setFillColor(241, 245, 249);
+                    doc.rect(14, y, W-28, 7, 'F');
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(8); doc.setFont(undefined, 'bold');
+                    doc.text(title.toUpperCase(), 16, y+4.5);
+                    y += 7;
+                    rows.forEach(([label, value]) => {
+                        if (!value && value !== 0) return;
+                        doc.setDrawColor(226, 232, 240);
+                        doc.line(14, y, W-14, y);
+                        doc.setTextColor(113, 128, 150);
+                        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+                        doc.text(String(label), 16, y+5);
+                        doc.setTextColor(30, 30, 50);
+                        doc.setFont(undefined, 'bold');
+                        const valStr = String(value);
+                        const valW = doc.getTextWidth(valStr);
+                        doc.text(valStr, W-14-valW, y+5);
+                        y += 8;
+                    });
+                    doc.setDrawColor(226, 232, 240);
+                    doc.rect(14, y-rows.filter(r=>r[1]).length*8-7, W-28, rows.filter(r=>r[1]).length*8+7, 'S');
+                    y += 4;
+                };
+
+                addSection('Datos Personales', [
+                    ['Nombre', v.nombre],
+                    ['DNI', v.dni || 'N/A'],
+                    ['Tipo', v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo'],
+                    ['Empresa', v.empresa || 'N/A'],
+                ]);
+                addSection('Ingreso', [
+                    ['Fecha', formatDate(v.fecha)],
+                    ['Hora', v.horaIngreso],
+                    ['Motivo / Area', v.aQuienColaborador],
+                    ['Procedencia', v.quienAutoriza || 'N/A'],
+                    v.observaciones ? ['Observaciones', v.observaciones] : null,
+                ].filter(Boolean));
+                addSection('Movilidad', [
+                    ['Tipo', v.movilidad || 'N/A'],
+                    ['Placa', v.placa || 'Sin placa'],
+                    v.hospedaje && v.hospedaje !== 'NO' ? ['Hospedaje', v.hospedaje] : null,
+                ].filter(Boolean));
+                if (comidas.length > 0) {
+                    addSection('Servicio de Comidas', comidas.map(c => [c, '']));
+                }
+                if (isCompleted) {
+                    addSection('Salida', [
+                        ['Fecha', formatDate(v.fechaSalida || v.fecha)],
+                        ['Hora', v.horaSalida || 'N/A'],
+                        ['Motivo', v.motivoSalida || 'N/A'],
+                        v.observacionesSalida ? ['Observaciones', v.observacionesSalida] : null,
+                    ].filter(Boolean));
+                }
+
+                // ── Pie de página ──
+                doc.setTextColor(170, 170, 170);
+                doc.setFontSize(8); doc.setFont(undefined, 'normal');
+                doc.text(`Generado: ${new Date().toLocaleString('es-PE')}  |  ${EMPRESA_NOMBRE}  |  ID: ${v.id}`, W/2, 285, { align: 'center' });
+
+                const filename = `Registro_${v.nombre.replace(/\s+/g,'_')}_${v.fecha}.pdf`;
+                doc.save(filename);
+                showToast('📄 PDF generado y descargado', 'success');
+            } catch(e) {
+                console.error('jsPDF error:', e);
+                showToast('❌ Error al generar PDF', 'error');
+            }
+        }
+
+        // ===== COMPARTIR VÍA WEB SHARE API =====
+        async function shareDetailText() {
+            if (!_detailCurrentId) return;
+            const visits = getVisits();
+            const v = visits.find(x => x.id === _detailCurrentId);
+            if (!v) return;
+            const isCompleted = v.status === 'completed';
+            const comidas = [];
+            if (v.desayuno) comidas.push(formatComida('🍳 Desayuno', v.desayunoDesde, v.desayunoHasta));
+            if (v.almuerzo) comidas.push(formatComida('🍛 Almuerzo', v.almuerzoDesde, v.almuerzoHasta));
+            if (v.cena)     comidas.push(formatComida('🍽️ Cena',     v.cenaDesde,     v.cenaHasta));
+
             const lines = [
                 `📋 REGISTRO DE CONTROL DE ACCESO`,
                 `🏢 ${EMPRESA_NOMBRE} — ${EMPRESA_SUBTITULO}`,
                 ``,
-                `${isCompleted ? '✅ COMPLETADO' : '🟢 ACTIVO — DENTRO'}`,
+                isCompleted ? `✅ COMPLETADO` : `🟢 ACTIVO — DENTRO`,
                 ``,
                 `👤 ${v.nombre}`,
                 `🆔 DNI: ${v.dni || 'N/A'}`,
@@ -2416,9 +2554,8 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
                 `📍 Procedencia: ${v.quienAutoriza || 'N/A'}`,
                 v.observaciones ? `📝 Obs: ${v.observaciones}` : null,
                 ``,
-                `${movilIcon} MOVILIDAD`,
-                `Tipo: ${v.movilidad}   Placa: ${v.placa || '*****'}`,
-                comidas.length ? comidas.join(' | ') : null,
+                `🚘 Movilidad: ${v.movilidad || 'N/A'}   Placa: ${v.placa || 'Sin placa'}`,
+                comidas.length ? comidas.join('\n') : null,
                 isCompleted ? `` : null,
                 isCompleted ? `🚪 SALIDA` : null,
                 isCompleted ? `📅 ${formatDate(v.fechaSalida||v.fecha)}   ⏰ ${v.horaSalida||'N/A'}` : null,
@@ -2429,78 +2566,26 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
                 `⏱️ ${new Date().toLocaleString('es-PE')}`,
             ].filter(l => l !== null).join('\n');
 
-            // Generar archivo Excel para compartir
-            const buildExcelFile = () => {
-                const wb = XLSX.utils.book_new();
-                const data = [
-                    ['REGISTRO DE CONTROL DE ACCESO'],
-                    [EMPRESA_NOMBRE + ' — ' + EMPRESA_SUBTITULO],
-                    ['ESTADO', isCompleted ? 'COMPLETADO' : 'ACTIVO'],
-                    [''],
-                    ['Nombre', v.nombre], ['DNI', v.dni||'N/A'],
-                    ['Tipo', v.tipoPersonal==='PROPIO'?'Personal Propio':'Personal Externo'],
-                    ['Empresa', v.empresa||'N/A'], [''],
-                    ['Fecha Ingreso', formatDate(v.fecha)], ['Hora Ingreso', v.horaIngreso],
-                    ['Motivo', v.aQuienColaborador], ['Procedencia', v.quienAutoriza||'N/A'],
-                    ['Observaciones', v.observaciones||''], [''],
-                    ['Movilidad', v.movilidad], ['Placa', v.placa||'*****'],
-                    ['Hospedaje', v.hospedaje||'NO'],
-                    ['Comidas', comidas.join(' | ')||'Ninguna'],
-                ];
-                if (isCompleted) {
-                    data.push([''],['Fecha Salida',formatDate(v.fechaSalida||v.fecha)],
-                        ['Hora Salida',v.horaSalida||'N/A'],['Motivo Salida',v.motivoSalida||'N/A'],
-                        ['Obs. Salida',v.observacionesSalida||'']);
-                }
-                data.push([''],['ID Registro', v.id],['Generado', new Date().toLocaleString('es-PE')]);
-                const ws = XLSX.utils.aoa_to_sheet(data);
-                XLSX.utils.book_append_sheet(wb, ws, 'Registro');
-                const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-                const filename = `registro_${v.nombre.replace(/\s+/g,'_')}_${v.fecha}.xlsx`;
-                const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                return { blob, filename };
-            };
-
-            // ── Capa 1: Web Share API con archivo (Android Chrome 86+) ──
             if (navigator.share) {
                 try {
-                    const { blob, filename } = buildExcelFile();
-                    const file = new File([blob], filename, { type: blob.type });
-                    let canFile = false;
-                    try { canFile = navigator.canShare && navigator.canShare({ files: [file] }); } catch(_) {}
-                    if (canFile) {
-                        await navigator.share({ title: `Registro — ${v.nombre}`, text: lines, files: [file] });
-                    } else {
-                        await navigator.share({ title: `Registro — ${v.nombre}`, text: lines });
-                    }
+                    await navigator.share({ title: `Registro — ${v.nombre}`, text: lines });
                     showToast('✅ Registro compartido', 'success');
                     return;
                 } catch(e) {
-                    if (e.name === 'AbortError') return; // usuario canceló — no hacer nada más
-                    // Si falla por otro motivo, continuar al fallback
+                    if (e.name === 'AbortError') return;
                 }
             }
-
-            // ── Capa 2: Descargar Excel (fallback escritorio / otros navegadores) ──
-            try {
-                const { blob, filename } = buildExcelFile();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = filename;
-                document.body.appendChild(a); a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
-                showToast('📥 Archivo Excel descargado', 'success');
-                return;
-            } catch(_) {}
-
-            // ── Capa 3: Copiar texto al portapapeles ──
+            // Fallback: copiar al portapapeles
             try {
                 await navigator.clipboard.writeText(lines);
-                showToast('📋 Resumen copiado al portapapeles', 'success');
+                showToast('📋 Texto copiado al portapapeles', 'success');
             } catch(_) {
                 showToast('❌ No se pudo compartir en este dispositivo', 'error');
             }
         }
+
+        // Función legacy (compatibilidad interna)
+        async function shareDetailPDF() { return shareDetailText(); }
 
         // ===== DELETE FROM DETAIL =====
         function confirmDeleteDetail() {
