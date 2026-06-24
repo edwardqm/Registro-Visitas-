@@ -939,6 +939,169 @@
         input:focus, select:focus, textarea:focus {
             scroll-margin-top: 80px;
         }
+
+        /* ===== DETAIL FULL-SCREEN MODAL ===== */
+        .detail-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--dark);
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.22s ease;
+        }
+        .detail-overlay.show { display: flex; }
+
+        .detail-header {
+            background: linear-gradient(135deg, var(--dark-light), var(--dark));
+            border-bottom: 1px solid var(--border);
+            padding: 16px 18px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .detail-back {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--dark);
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .detail-back:active { background: var(--dark-lighter); }
+        .detail-header-info { flex: 1; min-width: 0; }
+        .detail-header-name {
+            font-size: 17px; font-weight: 800;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .detail-header-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 18px 100px;
+        }
+
+        .detail-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .detail-status-bar.active {
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.25);
+            color: var(--warning);
+        }
+        .detail-status-bar.completed {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.25);
+            color: var(--success);
+        }
+
+        .detail-section {
+            background: var(--dark-light);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 16px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            min-width: 100px;
+        }
+        .detail-row-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: right;
+            word-break: break-word;
+        }
+        .detail-comida-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 6px;
+            background: rgba(59,130,246,0.15);
+            color: var(--primary);
+        }
+
+        .detail-actions {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--dark-light);
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        .detail-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 6px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .detail-action-btn .d-icon { font-size: 24px; }
+        .detail-action-btn:active { background: var(--dark-lighter); transform: scale(0.96); }
+        .detail-action-btn.print { color: var(--warning); }
+        .detail-action-btn.share { color: var(--primary); }
+        .detail-action-btn.delete { color: var(--danger); }
+
+        /* Double-tap hint */
+        .tap-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 6px 0 0;
+            opacity: 0.6;
+            letter-spacing: 0.3px;
+        }
 </style>
 </head>
 <body>
@@ -1173,10 +1336,12 @@
     </section>
 
     <section id="section-active" class="section">
+        <div class="tap-hint">👆 Doble toque sobre un registro para ver detalle</div>
         <div id="activeVisitsList"></div>
     </section>
 
     <section id="section-history" class="section">
+        <div class="tap-hint">👆 Doble toque sobre un registro para ver detalle</div>
         <div id="historyVisitsList"></div>
     </section>
 
@@ -1194,6 +1359,56 @@
             <a href="https://www.linkedin.com/in/edwardqm" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1px solid var(--primary); border-radius:20px; transition:all 0.2s;">
                 <span>🔗</span> LinkedIn
             </a>
+        </div>
+    </div>
+
+    <!-- ===== DETAIL FULL-SCREEN MODAL ===== -->
+    <div class="detail-overlay" id="detailOverlay">
+        <div class="detail-header">
+            <button class="detail-back" onclick="closeDetailModal()">←</button>
+            <div class="detail-header-info">
+                <div class="detail-header-name" id="detailHeaderName">—</div>
+                <div class="detail-header-sub" id="detailHeaderSub">Solo lectura</div>
+            </div>
+            <span id="detailHeaderBadge" class="visit-status" style="flex-shrink:0;"></span>
+        </div>
+
+        <div class="detail-body" id="detailBody"></div>
+
+        <div class="detail-actions">
+            <button class="detail-action-btn print" onclick="printDetailRecord()">
+                <span class="d-icon">🖨️</span>
+                <span>Imprimir</span>
+            </button>
+            <button class="detail-action-btn share" onclick="shareDetailPDF()">
+                <span class="d-icon">📄</span>
+                <span>Compartir PDF</span>
+            </button>
+            <button class="detail-action-btn delete" onclick="confirmDeleteDetail()">
+                <span class="d-icon">🗑️</span>
+                <span>Eliminar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal confirmación eliminación desde detalle -->
+    <div class="modal-overlay" id="deleteDetailModal" onclick="if(event.target===this)closeModal('deleteDetailModal')" style="z-index:600;">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">🗑️ Eliminar Registro</h3>
+                <button type="button" class="modal-close" onclick="closeModal('deleteDetailModal')">✕</button>
+            </div>
+            <div style="text-align:center;margin-bottom:18px;">
+                <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
+                <p style="font-size:14px;color:var(--text-muted);">Esta acción no se puede deshacer. Ingrese la clave para confirmar.</p>
+            </div>
+            <div class="form-group">
+                <label>Clave de seguridad</label>
+                <input type="password" id="deleteDetailClave" placeholder="••••" inputmode="numeric" pattern="[0-9]*" style="font-size:28px;text-align:center;letter-spacing:12px;" onkeydown="if(event.key==='Enter')executeDeleteDetail()">
+            </div>
+            <button type="button" class="btn-primary" onclick="executeDeleteDetail()" style="background:linear-gradient(135deg,var(--danger),#b91c1c);box-shadow:0 4px 20px rgba(239,68,68,0.3);">
+                <span>🗑️</span> Eliminar Registro
+            </button>
         </div>
     </div>
 
@@ -1970,6 +2185,328 @@
             });
         }
 
+        // ===== DOUBLE TAP (mobile) =====
+        function handleDoubleTap(event, id) {
+            const card = event.currentTarget;
+            const now = Date.now();
+            const last = parseInt(card.dataset.lastTap || '0');
+            if (now - last < 350) {
+                event.preventDefault();
+                openDetailModal(id);
+            }
+            card.dataset.lastTap = now;
+        }
+
+        // ===== DETAIL MODAL =====
+        let _detailCurrentId = null;
+
+        function openDetailModal(id) {
+            const visits = getVisits();
+            const visit = visits.find(v => v.id === id);
+            if (!visit) return;
+            _detailCurrentId = id;
+
+            const isCompleted = visit.status === 'completed';
+            const movilIcon = {'Peatón':'🚶','Auto o camioneta':'🚗','Vehículo particular':'🚙','Moto':'🏍️','Camión':'🚛','Van/Bus':'🚌','Bicicleta':'🚲'}[visit.movilidad] || '🚘';
+
+            // Header
+            document.getElementById('detailHeaderName').textContent = visit.nombre;
+            document.getElementById('detailHeaderSub').textContent = `ID: ${visit.id}  ·  Solo lectura`;
+            const badge = document.getElementById('detailHeaderBadge');
+            badge.textContent = isCompleted ? '✓ Completado' : '● Interno';
+            badge.className = `visit-status ${isCompleted ? 'status-completed' : 'status-active'}`;
+
+            // Body
+            const comidas = [];
+            if (visit.desayuno) comidas.push(`🍳 Desayuno ${visit.desayunoDesde||'?'}→${visit.desayunoHasta||'?'}`);
+            if (visit.almuerzo) comidas.push(`🍛 Almuerzo ${visit.almuerzoDesde||'?'}→${visit.almuerzoHasta||'?'}`);
+            if (visit.cena)     comidas.push(`🍽️ Cena ${visit.cenaDesde||'?'}→${visit.cenaHasta||'?'}`);
+
+            document.getElementById('detailBody').innerHTML = `
+                <div class="detail-status-bar ${isCompleted ? 'completed' : 'active'}">
+                    <span style="font-size:22px;">${isCompleted ? '✅' : '🟢'}</span>
+                    <span>${isCompleted ? 'REGISTRO COMPLETADO — YA SALIÓ' : 'COLABORADOR ACTIVO — DENTRO'}</span>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">👤 Datos Personales</div>
+                    <div class="detail-row"><span class="detail-row-label">Nombre</span><span class="detail-row-value">${visit.nombre}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">DNI</span><span class="detail-row-value">${visit.dni || 'N/A'}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Tipo</span><span class="detail-row-value">${visit.tipoPersonal === 'PROPIO' ? '🏭 Personal Propio' : '🚪 Personal Externo'}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Empresa</span><span class="detail-row-value">${visit.empresa || 'N/A'}</span></div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">🚪 Ingreso</div>
+                    <div class="detail-row"><span class="detail-row-label">Fecha</span><span class="detail-row-value">${formatDate(visit.fecha)}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Hora</span><span class="detail-row-value">${visit.horaIngreso}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Motivo</span><span class="detail-row-value">${visit.aQuienColaborador}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Procedencia</span><span class="detail-row-value">${visit.quienAutoriza || 'N/A'}</span></div>
+                    ${visit.observaciones ? `<div class="detail-row"><span class="detail-row-label">Obs.</span><span class="detail-row-value" style="color:var(--text-muted);font-weight:500;">${visit.observaciones}</span></div>` : ''}
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">${movilIcon} Movilidad</div>
+                    <div class="detail-row"><span class="detail-row-label">Tipo</span><span class="detail-row-value">${movilIcon} ${visit.movilidad}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Placa</span><span class="detail-row-value">${visit.placa || '*****'}</span></div>
+                    ${visit.hospedaje && visit.hospedaje !== 'NO' ? `<div class="detail-row"><span class="detail-row-label">Hospedaje</span><span class="detail-row-value">🏠 ${visit.hospedaje}</span></div>` : ''}
+                </div>
+
+                ${comidas.length > 0 ? `
+                <div class="detail-section">
+                    <div class="detail-section-title">🍽️ Servicio de Comidas</div>
+                    ${comidas.map(c => `<div class="detail-row"><span class="detail-row-value" style="text-align:left;">${c}</span></div>`).join('')}
+                </div>
+                ` : ''}
+
+                ${isCompleted ? `
+                <div class="detail-section">
+                    <div class="detail-section-title">🚪 Salida</div>
+                    <div class="detail-row"><span class="detail-row-label">Fecha</span><span class="detail-row-value">${formatDate(visit.fechaSalida || visit.fecha)}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Hora</span><span class="detail-row-value">${visit.horaSalida || 'N/A'}</span></div>
+                    <div class="detail-row"><span class="detail-row-label">Motivo</span><span class="detail-row-value">${visit.motivoSalida || 'N/A'}</span></div>
+                    ${visit.observacionesSalida ? `<div class="detail-row"><span class="detail-row-label">Obs.</span><span class="detail-row-value" style="color:var(--text-muted);font-weight:500;">${visit.observacionesSalida}</span></div>` : ''}
+                </div>
+                ` : ''}
+            `;
+
+            const overlay = document.getElementById('detailOverlay');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailOverlay').classList.remove('show');
+            document.body.style.overflow = '';
+            _detailCurrentId = null;
+        }
+
+        // ===== PRINT DETAIL =====
+        function printDetailRecord() {
+            if (!_detailCurrentId) return;
+            const visits = getVisits();
+            const v = visits.find(x => x.id === _detailCurrentId);
+            if (!v) return;
+            const isCompleted = v.status === 'completed';
+            const movilIcon = {'Peatón':'🚶','Auto o camioneta':'🚗','Vehículo particular':'🚙','Moto':'🏍️','Camión':'🚛','Van/Bus':'🚌','Bicicleta':'🚲'}[v.movilidad] || '🚘';
+            const comidas = [];
+            if (v.desayuno) comidas.push(`🍳 Desayuno ${v.desayunoDesde||'?'} → ${v.desayunoHasta||'?'}`);
+            if (v.almuerzo) comidas.push(`🍛 Almuerzo ${v.almuerzoDesde||'?'} → ${v.almuerzoHasta||'?'}`);
+            if (v.cena)     comidas.push(`🍽️ Cena ${v.cenaDesde||'?'} → ${v.cenaHasta||'?'}`);
+
+            const printWin = window.open('', '_blank', 'width=800,height=700');
+            printWin.document.write(`
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Registro - ${v.nombre}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a2e; padding: 24px; background:#fff; }
+  .header { text-align:center; border-bottom: 2px solid #e53e3e; padding-bottom:14px; margin-bottom:18px; }
+  .company { font-size:18px; font-weight:800; color:#e53e3e; }
+  .subtitle { font-size:12px; color:#666; margin-top:3px; text-transform:uppercase; letter-spacing:1px; }
+  .doc-title { font-size:14px; font-weight:700; margin-top:8px; }
+  .status-bar { display:inline-block; padding:6px 18px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:18px; }
+  .status-active { background:#fef3c7; color:#d97706; border:1px solid #fcd34d; }
+  .status-done   { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+  .section { border: 1px solid #e2e8f0; border-radius:8px; margin-bottom:14px; overflow:hidden; }
+  .section-title { background:#f7fafc; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#718096; padding:8px 14px; border-bottom:1px solid #e2e8f0; }
+  .row { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #f0f0f0; }
+  .row:last-child { border-bottom:none; }
+  .label { color:#718096; font-size:12px; }
+  .value { font-weight:700; font-size:12px; text-align:right; }
+  .footer { text-align:center; margin-top:20px; font-size:11px; color:#aaa; }
+  @media print { body { padding:10px; } }
+</style></head><body>
+<div class="header">
+  <div class="company">${EMPRESA_NOMBRE}</div>
+  <div class="subtitle">${EMPRESA_SUBTITULO}</div>
+  <div class="doc-title">REGISTRO DE CONTROL DE ACCESO</div>
+</div>
+<div style="text-align:center; margin-bottom:14px;">
+  <span class="status-bar ${isCompleted ? 'status-done' : 'status-active'}">${isCompleted ? '✓ COMPLETADO' : '● ACTIVO - DENTRO'}</span>
+</div>
+<div class="section">
+  <div class="section-title">👤 Datos Personales</div>
+  <div class="row"><span class="label">Nombre</span><span class="value">${v.nombre}</span></div>
+  <div class="row"><span class="label">DNI</span><span class="value">${v.dni || 'N/A'}</span></div>
+  <div class="row"><span class="label">Tipo</span><span class="value">${v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo'}</span></div>
+  <div class="row"><span class="label">Empresa</span><span class="value">${v.empresa || 'N/A'}</span></div>
+</div>
+<div class="section">
+  <div class="section-title">🚪 Ingreso</div>
+  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fecha)}</span></div>
+  <div class="row"><span class="label">Hora</span><span class="value">${v.horaIngreso}</span></div>
+  <div class="row"><span class="label">Motivo</span><span class="value">${v.aQuienColaborador}</span></div>
+  <div class="row"><span class="label">Procedencia</span><span class="value">${v.quienAutoriza || 'N/A'}</span></div>
+  ${v.observaciones ? `<div class="row"><span class="label">Obs.</span><span class="value">${v.observaciones}</span></div>` : ''}
+</div>
+<div class="section">
+  <div class="section-title">${movilIcon} Movilidad</div>
+  <div class="row"><span class="label">Tipo</span><span class="value">${v.movilidad}</span></div>
+  <div class="row"><span class="label">Placa</span><span class="value">${v.placa || '*****'}</span></div>
+  ${v.hospedaje && v.hospedaje !== 'NO' ? `<div class="row"><span class="label">Hospedaje</span><span class="value">${v.hospedaje}</span></div>` : ''}
+</div>
+${comidas.length > 0 ? `<div class="section"><div class="section-title">🍽️ Comidas</div>${comidas.map(c=>`<div class="row"><span class="label">${c}</span></div>`).join('')}</div>` : ''}
+${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</div>
+  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fechaSalida||v.fecha)}</span></div>
+  <div class="row"><span class="label">Hora</span><span class="value">${v.horaSalida||'N/A'}</span></div>
+  <div class="row"><span class="label">Motivo</span><span class="value">${v.motivoSalida||'N/A'}</span></div>
+  ${v.observacionesSalida ? `<div class="row"><span class="label">Obs.</span><span class="value">${v.observacionesSalida}</span></div>` : ''}
+</div>` : ''}
+<div class="section">
+  <div class="section-title">🔑 Firma de Seguridad</div>
+  <div class="row"><span class="label">Guardián</span><span class="value">________________________</span></div>
+  <div class="row"><span class="label">Firma colaborador</span><span class="value">________________________</span></div>
+</div>
+<div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} · ${EMPRESA_NOMBRE} · ID: ${v.id}</div>
+</body></html>`);
+            printWin.document.close();
+            printWin.focus();
+            setTimeout(() => { printWin.print(); }, 400);
+        }
+
+        // ===== SHARE AS PDF (via print-to-PDF dialog or file) =====
+        async function shareDetailPDF() {
+            if (!_detailCurrentId) return;
+            const visits = getVisits();
+            const v = visits.find(x => x.id === _detailCurrentId);
+            if (!v) return;
+
+            const isCompleted = v.status === 'completed';
+            const movilIcon = {'Peatón':'🚶','Auto o camioneta':'🚗','Vehículo particular':'🚙','Moto':'🏍️','Camión':'🚛','Van/Bus':'🚌','Bicicleta':'🚲'}[v.movilidad] || '🚘';
+            const comidas = [];
+            if (v.desayuno) comidas.push(`🍳 Desayuno ${v.desayunoDesde||'?'}→${v.desayunoHasta||'?'}`);
+            if (v.almuerzo) comidas.push(`🍛 Almuerzo ${v.almuerzoDesde||'?'}→${v.almuerzoHasta||'?'}`);
+            if (v.cena)     comidas.push(`🍽️ Cena ${v.cenaDesde||'?'}→${v.cenaHasta||'?'}`);
+
+            // Texto del resumen (siempre disponible)
+            const lines = [
+                `📋 REGISTRO DE CONTROL DE ACCESO`,
+                `🏢 ${EMPRESA_NOMBRE} — ${EMPRESA_SUBTITULO}`,
+                ``,
+                `${isCompleted ? '✅ COMPLETADO' : '🟢 ACTIVO — DENTRO'}`,
+                ``,
+                `👤 ${v.nombre}`,
+                `🆔 DNI: ${v.dni || 'N/A'}`,
+                `👔 ${v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo'}`,
+                `🏢 Empresa: ${v.empresa || 'N/A'}`,
+                ``,
+                `🚪 INGRESO`,
+                `📅 Fecha: ${formatDate(v.fecha)}   ⏰ Hora: ${v.horaIngreso}`,
+                `📋 Motivo: ${v.aQuienColaborador}`,
+                `📍 Procedencia: ${v.quienAutoriza || 'N/A'}`,
+                v.observaciones ? `📝 Obs: ${v.observaciones}` : null,
+                ``,
+                `${movilIcon} MOVILIDAD`,
+                `Tipo: ${v.movilidad}   Placa: ${v.placa || '*****'}`,
+                comidas.length ? comidas.join(' | ') : null,
+                isCompleted ? `` : null,
+                isCompleted ? `🚪 SALIDA` : null,
+                isCompleted ? `📅 ${formatDate(v.fechaSalida||v.fecha)}   ⏰ ${v.horaSalida||'N/A'}` : null,
+                isCompleted ? `Motivo: ${v.motivoSalida||'N/A'}` : null,
+                isCompleted && v.observacionesSalida ? `📝 ${v.observacionesSalida}` : null,
+                ``,
+                `🔑 ID: ${v.id}`,
+                `⏱️ ${new Date().toLocaleString('es-PE')}`,
+            ].filter(l => l !== null).join('\n');
+
+            // Intentar compartir con archivo Excel adjunto
+            const tryShareWithFile = async () => {
+                const wb = XLSX.utils.book_new();
+                const data = [
+                    ['REGISTRO DE CONTROL DE ACCESO'],
+                    [EMPRESA_NOMBRE + ' — ' + EMPRESA_SUBTITULO],
+                    ['ESTADO', isCompleted ? 'COMPLETADO' : 'ACTIVO'],
+                    [''],
+                    ['Nombre', v.nombre], ['DNI', v.dni||'N/A'],
+                    ['Tipo', v.tipoPersonal==='PROPIO'?'Personal Propio':'Personal Externo'],
+                    ['Empresa', v.empresa||'N/A'], [''],
+                    ['Fecha Ingreso', formatDate(v.fecha)], ['Hora Ingreso', v.horaIngreso],
+                    ['Motivo', v.aQuienColaborador], ['Procedencia', v.quienAutoriza||'N/A'],
+                    ['Observaciones', v.observaciones||''], [''],
+                    ['Movilidad', v.movilidad], ['Placa', v.placa||'*****'],
+                    ['Hospedaje', v.hospedaje||'NO'],
+                    ['Comidas', comidas.join(' | ')||'Ninguna'],
+                ];
+                if (isCompleted) {
+                    data.push([''],['Fecha Salida',formatDate(v.fechaSalida||v.fecha)],
+                        ['Hora Salida',v.horaSalida||'N/A'],['Motivo Salida',v.motivoSalida||'N/A'],
+                        ['Obs. Salida',v.observacionesSalida||'']);
+                }
+                data.push([''],['ID Registro', v.id],['Impreso', new Date().toLocaleString('es-PE')]);
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Registro');
+                const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+                const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const filename = `registro_${v.nombre.replace(/\s+/g,'_')}_${v.fecha}.xlsx`;
+                const file = new File([blob], filename, { type: blob.type });
+
+                // Capa 1: share con archivo
+                if (navigator.share && typeof navigator.canShare === 'function') {
+                    let canDoFile = false;
+                    try { canDoFile = navigator.canShare({ files: [file] }); } catch(_) {}
+                    if (canDoFile) {
+                        await navigator.share({ title: `Registro ${v.nombre}`, text: lines, files: [file] });
+                        return 'shared';
+                    }
+                }
+                // Capa 2: share solo texto
+                if (navigator.share) {
+                    await navigator.share({ title: `Registro ${v.nombre}`, text: lines });
+                    return 'shared_text';
+                }
+                // Capa 3: descargar archivo
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a'); a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+                return 'downloaded';
+            };
+
+            try {
+                const result = await tryShareWithFile();
+                if (result === 'downloaded') showToast('📥 Archivo descargado para compartir', 'success');
+                else if (result === 'shared_text') showToast('✅ Resumen compartido', 'success');
+            } catch(e) {
+                if (e.name === 'AbortError') return; // usuario canceló
+                // Último recurso: copiar texto al portapapeles
+                try {
+                    await navigator.clipboard.writeText(lines);
+                    showToast('📋 Texto copiado al portapapeles', 'success');
+                } catch(_) {
+                    showToast('❌ No se pudo compartir en este dispositivo', 'error');
+                }
+            }
+        }
+
+        // ===== DELETE FROM DETAIL =====
+        function confirmDeleteDetail() {
+            if (!_detailCurrentId) return;
+            document.getElementById('deleteDetailClave').value = '';
+            const m = document.getElementById('deleteDetailModal');
+            m.style.display = 'flex';
+            void m.offsetHeight;
+            m.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('deleteDetailClave').focus(), 300);
+        }
+
+        function executeDeleteDetail() {
+            const clave = document.getElementById('deleteDetailClave').value;
+            if (clave !== DELETE_PASSWORD) {
+                showToast('❌ Clave incorrecta', 'error');
+                document.getElementById('deleteDetailClave').value = '';
+                document.getElementById('deleteDetailClave').focus();
+                return;
+            }
+            const visits = getVisits().filter(v => v.id !== _detailCurrentId);
+            saveVisits(visits);
+            updateStats(); renderActiveVisits(); renderHistoryVisits(); updateDatalists();
+            closeModal('deleteDetailModal');
+            closeDetailModal();
+            showToast('🗑️ Registro eliminado', 'success');
+        }
+
         // ===== ADMIN PANEL =====
         const ADMIN_PASSWORD = '0000';
         const ADMIN_KEY = 'admin_config_v1';
@@ -2319,7 +2856,20 @@
         function init() {
             setupUppercaseInputs();
             setupScrollToField();
-            rebuildSelectOptions(); // Apply saved admin lists on load
+            rebuildSelectOptions();
+
+            // Close detail overlay on Escape or Android back
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const overlay = document.getElementById('detailOverlay');
+                    if (overlay.classList.contains('show')) { closeDetailModal(); return; }
+                }
+            });
+            window.addEventListener('popstate', function() {
+                const overlay = document.getElementById('detailOverlay');
+                if (overlay.classList.contains('show')) closeDetailModal();
+            });
+
             const updateDateTime = () => {
                 const now = new Date();
                 const fechaEl = document.getElementById('fecha');
@@ -2521,8 +3071,12 @@
 
             const isSearch = context === 'search';
 
+            const tapAttr = (context !== 'search')
+                ? `ondblclick="openDetailModal('${visit.id}')" data-id="${visit.id}" data-last-tap="0"`
+                : `data-id="${visit.id}"`;
+
             return `
-                <div class="visit-card ${isCompleted ? 'completed' : ''} animate-slide-up">
+                <div class="visit-card ${isCompleted ? 'completed' : ''} animate-slide-up" ${tapAttr} ontouchend="${context !== 'search' ? `handleDoubleTap(event,'${visit.id}')` : ''}">
                     <div class="visit-header">
                         <div class="visit-name">${visit.nombre}</div>
                         <span class="visit-status ${isCompleted ? 'status-completed' : 'status-active'}">
