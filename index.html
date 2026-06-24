@@ -1408,10 +1408,6 @@
                 <span class="d-icon">📄</span>
                 <span>Generar PDF</span>
             </button>
-            <button class="detail-action-btn" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.05);color:var(--success);" onclick="shareDetailText()">
-                <span class="d-icon">📤</span>
-                <span>Compartir</span>
-            </button>
             <button class="detail-action-btn delete" onclick="confirmDeleteDetail()">
                 <span class="d-icon">🗑️</span>
                 <span>Eliminar</span>
@@ -2401,16 +2397,25 @@ ${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
 <div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} &nbsp;|&nbsp; ${EMPRESA_NOMBRE} &nbsp;|&nbsp; ID: ${v.id}</div>
 </body></html>`;
 
+            // Usar Blob URL — más compatible con Android Chrome que srcdoc
+            const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
                 } catch(e) {
-                    showToast('❌ Error al abrir impresora', 'error');
+                    // Fallback: abrir en nueva pestaña para imprimir
+                    window.open(blobUrl, '_blank');
+                    showToast('📄 Abierto en nueva pestaña — usa Imprimir del navegador', 'success');
                 }
-                setTimeout(() => iframe.remove(), 3000);
+                setTimeout(() => {
+                    iframe.remove();
+                    URL.revokeObjectURL(blobUrl);
+                }, 5000);
             };
-            iframe.srcdoc = html;
+            iframe.src = blobUrl;
         }
 
         // ===== GENERAR PDF REAL (jsPDF) =====
@@ -2456,14 +2461,15 @@ ${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
 
                 // ── Helper: sección con tabla ──
                 const addSection = (title, rows) => {
+                    const validRows = rows.filter(r => r && (r[1] || r[1] === 0));
+                    if (validRows.length === 0) return;
                     doc.setFillColor(241, 245, 249);
                     doc.rect(14, y, W-28, 7, 'F');
                     doc.setTextColor(100, 116, 139);
                     doc.setFontSize(8); doc.setFont(undefined, 'bold');
                     doc.text(title.toUpperCase(), 16, y+4.5);
                     y += 7;
-                    rows.forEach(([label, value]) => {
-                        if (!value && value !== 0) return;
+                    validRows.forEach(([label, value]) => {
                         doc.setDrawColor(226, 232, 240);
                         doc.line(14, y, W-14, y);
                         doc.setTextColor(113, 128, 150);
@@ -2477,7 +2483,29 @@ ${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
                         y += 8;
                     });
                     doc.setDrawColor(226, 232, 240);
-                    doc.rect(14, y-rows.filter(r=>r[1]).length*8-7, W-28, rows.filter(r=>r[1]).length*8+7, 'S');
+                    doc.rect(14, y - validRows.length*8 - 7, W-28, validRows.length*8+7, 'S');
+                    y += 4;
+                };
+
+                // ── Helper: sección de lista (ej. comidas) sin columna derecha ──
+                const addListSection = (title, items) => {
+                    if (!items || items.length === 0) return;
+                    doc.setFillColor(241, 245, 249);
+                    doc.rect(14, y, W-28, 7, 'F');
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(8); doc.setFont(undefined, 'bold');
+                    doc.text(title.toUpperCase(), 16, y+4.5);
+                    y += 7;
+                    items.forEach(item => {
+                        doc.setDrawColor(226, 232, 240);
+                        doc.line(14, y, W-14, y);
+                        doc.setTextColor(30, 30, 50);
+                        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+                        doc.text(String(item), 16, y+5);
+                        y += 8;
+                    });
+                    doc.setDrawColor(226, 232, 240);
+                    doc.rect(14, y - items.length*8 - 7, W-28, items.length*8+7, 'S');
                     y += 4;
                 };
 
@@ -2500,7 +2528,7 @@ ${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
                     v.hospedaje && v.hospedaje !== 'NO' ? ['Hospedaje', v.hospedaje] : null,
                 ].filter(Boolean));
                 if (comidas.length > 0) {
-                    addSection('Servicio de Comidas', comidas.map(c => [c, '']));
+                    addListSection('Servicio de Comidas', comidas);
                 }
                 if (isCompleted) {
                     addSection('Salida', [
