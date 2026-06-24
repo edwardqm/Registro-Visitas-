@@ -13,6 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -811,6 +813,25 @@
         .btn-action.save { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); color: var(--success); }
         .btn-action.share { border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); color: var(--primary); }
         .btn-action.print { border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); color: var(--warning); }
+
+        /* Sync status badge */
+        .sync-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            transition: all 0.3s;
+        }
+        .sync-badge.online  { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+        .sync-badge.offline { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+        .sync-badge.syncing { background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid rgba(59,130,246,0.3); }
+        .sync-badge.error   { background: rgba(239,68,68,0.15);  color: #ef4444;  border: 1px solid rgba(239,68,68,0.3); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .sync-badge.syncing .sync-dot { animation: pulse 1s infinite; }
         @media print {
             body { background: white; color: black; padding: 0; }
             .header, .tabs, .bottom-nav, .btn-icon, .visit-actions, .modal-overlay, .btn-action, .dev-info { display: none !important; }
@@ -1115,6 +1136,9 @@
                 </div>
             </div>
             <div class="header-actions">
+                <span id="syncBadge" class="sync-badge offline" title="Estado de sincronización">
+                    <span class="sync-dot">⚫</span> <span id="syncText">Sin sync</span>
+                </span>
                 <button type="button" class="btn-icon" onclick="showExportModal()" title="Exportar">📤</button>
                 <button type="button" class="btn-icon" onclick="openAdminLogin()" title="Panel de Control">⚙️</button>
             </div>
@@ -2353,11 +2377,6 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
   <div class="row"><span class="label">Motivo</span><span class="value">${v.motivoSalida||'N/A'}</span></div>
   ${v.observacionesSalida ? `<div class="row"><span class="label">Obs.</span><span class="value">${v.observacionesSalida}</span></div>` : ''}
 </div>` : ''}
-<div class="section">
-  <div class="section-title">🔑 Firma de Seguridad</div>
-  <div class="row"><span class="label">Guardián</span><span class="value">________________________</span></div>
-  <div class="row"><span class="label">Firma colaborador</span><span class="value">________________________</span></div>
-</div>
 <div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} · ${EMPRESA_NOMBRE} · ID: ${v.id}</div>
 </body></html>`);
             printWin.document.close();
@@ -2365,7 +2384,7 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
             setTimeout(() => { printWin.print(); }, 400);
         }
 
-        // ===== SHARE AS PDF (via print-to-PDF dialog or file) =====
+        // ===== SHARE AS PDF (via Web Share API or fallback) =====
         async function shareDetailPDF() {
             if (!_detailCurrentId) return;
             const visits = getVisits();
@@ -2410,8 +2429,8 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
                 `⏱️ ${new Date().toLocaleString('es-PE')}`,
             ].filter(l => l !== null).join('\n');
 
-            // Intentar compartir con archivo Excel adjunto
-            const tryShareWithFile = async () => {
+            // Generar archivo Excel para compartir
+            const buildExcelFile = () => {
                 const wb = XLSX.utils.book_new();
                 const data = [
                     ['REGISTRO DE CONTROL DE ACCESO'],
@@ -2433,49 +2452,53 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
                         ['Hora Salida',v.horaSalida||'N/A'],['Motivo Salida',v.motivoSalida||'N/A'],
                         ['Obs. Salida',v.observacionesSalida||'']);
                 }
-                data.push([''],['ID Registro', v.id],['Impreso', new Date().toLocaleString('es-PE')]);
+                data.push([''],['ID Registro', v.id],['Generado', new Date().toLocaleString('es-PE')]);
                 const ws = XLSX.utils.aoa_to_sheet(data);
                 XLSX.utils.book_append_sheet(wb, ws, 'Registro');
                 const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-                const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const filename = `registro_${v.nombre.replace(/\s+/g,'_')}_${v.fecha}.xlsx`;
-                const file = new File([blob], filename, { type: blob.type });
-
-                // Capa 1: share con archivo
-                if (navigator.share && typeof navigator.canShare === 'function') {
-                    let canDoFile = false;
-                    try { canDoFile = navigator.canShare({ files: [file] }); } catch(_) {}
-                    if (canDoFile) {
-                        await navigator.share({ title: `Registro ${v.nombre}`, text: lines, files: [file] });
-                        return 'shared';
-                    }
-                }
-                // Capa 2: share solo texto
-                if (navigator.share) {
-                    await navigator.share({ title: `Registro ${v.nombre}`, text: lines });
-                    return 'shared_text';
-                }
-                // Capa 3: descargar archivo
-                const url = URL.createObjectURL(file);
-                const a = document.createElement('a'); a.href = url; a.download = filename;
-                document.body.appendChild(a); a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
-                return 'downloaded';
+                const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                return { blob, filename };
             };
 
-            try {
-                const result = await tryShareWithFile();
-                if (result === 'downloaded') showToast('📥 Archivo descargado para compartir', 'success');
-                else if (result === 'shared_text') showToast('✅ Resumen compartido', 'success');
-            } catch(e) {
-                if (e.name === 'AbortError') return; // usuario canceló
-                // Último recurso: copiar texto al portapapeles
+            // ── Capa 1: Web Share API con archivo (Android Chrome 86+) ──
+            if (navigator.share) {
                 try {
-                    await navigator.clipboard.writeText(lines);
-                    showToast('📋 Texto copiado al portapapeles', 'success');
-                } catch(_) {
-                    showToast('❌ No se pudo compartir en este dispositivo', 'error');
+                    const { blob, filename } = buildExcelFile();
+                    const file = new File([blob], filename, { type: blob.type });
+                    let canFile = false;
+                    try { canFile = navigator.canShare && navigator.canShare({ files: [file] }); } catch(_) {}
+                    if (canFile) {
+                        await navigator.share({ title: `Registro — ${v.nombre}`, text: lines, files: [file] });
+                    } else {
+                        await navigator.share({ title: `Registro — ${v.nombre}`, text: lines });
+                    }
+                    showToast('✅ Registro compartido', 'success');
+                    return;
+                } catch(e) {
+                    if (e.name === 'AbortError') return; // usuario canceló — no hacer nada más
+                    // Si falla por otro motivo, continuar al fallback
                 }
+            }
+
+            // ── Capa 2: Descargar Excel (fallback escritorio / otros navegadores) ──
+            try {
+                const { blob, filename } = buildExcelFile();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+                showToast('📥 Archivo Excel descargado', 'success');
+                return;
+            } catch(_) {}
+
+            // ── Capa 3: Copiar texto al portapapeles ──
+            try {
+                await navigator.clipboard.writeText(lines);
+                showToast('📋 Resumen copiado al portapapeles', 'success');
+            } catch(_) {
+                showToast('❌ No se pudo compartir en este dispositivo', 'error');
             }
         }
 
@@ -4049,7 +4072,130 @@ ${isCompleted ? `<div class="section"><div class="section-title">🚪 Salida</di
             }
         }, { passive: false });
 
+        // ===== SUPABASE SYNC (tiempo real entre dispositivos) =====
+        // ─────────────────────────────────────────────────────────
+        // INSTRUCCIONES DE CONFIGURACIÓN (5 minutos, sin tarjeta):
+        //
+        //  1. Ir a https://supabase.com → "Start your project" → registrarse con email
+        //  2. Crear nuevo proyecto (gratis) → elegir región más cercana (p.ej. us-east-1)
+        //  3. Ir a: Table Editor → New Table
+        //       Nombre de tabla: visitas
+        //       Columnas: id (text, primary key), data (text)
+        //       Desactivar "Row Level Security (RLS)" por ahora
+        //  4. Ir a: Project Settings → API
+        //       Copiar "Project URL" y "anon public key"
+        //  5. Pegar los valores en las constantes de abajo
+        //  6. Cambiar SUPABASE_ENABLED a true
+        //  7. En Supabase: Database → Replication → habilitar "supabase_realtime" en tabla "visitas"
+        // ─────────────────────────────────────────────────────────
+
+        const SUPABASE_ENABLED = false; // ← Cambiar a true al configurar
+        const SUPABASE_URL     = 'https://TU_PROYECTO.supabase.co';
+        const SUPABASE_KEY     = 'TU_ANON_PUBLIC_KEY';
+        const SUPABASE_TABLE   = 'visitas';
+
+        let _supabase   = null;
+        let _syncChannel = null;
+        let _isSyncing  = false; // evita loops
+
+        function setSyncStatus(state, text) {
+            const badge  = document.getElementById('syncBadge');
+            const textEl = document.getElementById('syncText');
+            if (!badge) return;
+            badge.className = `sync-badge ${state}`;
+            const dots = { online:'🟢', offline:'🟡', syncing:'🔵', error:'🔴' };
+            badge.querySelector('.sync-dot').textContent = dots[state] || '⚫';
+            textEl.textContent = text;
+        }
+
+        // Guarda en localStorage Y en Supabase
+        function saveVisits(visits) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(visits));
+            if (SUPABASE_ENABLED && _supabase && !_isSyncing) {
+                pushToSupabase(visits);
+            }
+        }
+
+        async function pushToSupabase(visits) {
+            setSyncStatus('syncing', 'Guardando...');
+            try {
+                // Guardamos todo el array como un único documento JSON
+                // (tabla: id='main', data=JSON)
+                const { error } = await _supabase
+                    .from(SUPABASE_TABLE)
+                    .upsert({ id: 'main', data: JSON.stringify(visits) });
+                if (error) throw error;
+                setSyncStatus('online', 'Sincronizado');
+            } catch(e) {
+                console.error('Supabase push error:', e);
+                setSyncStatus('error', 'Error al guardar');
+            }
+        }
+
+        async function pullFromSupabase() {
+            try {
+                const { data, error } = await _supabase
+                    .from(SUPABASE_TABLE)
+                    .select('data')
+                    .eq('id', 'main')
+                    .single();
+                if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
+                if (data && data.data) {
+                    const remote = JSON.parse(data.data);
+                    const localJson = localStorage.getItem(STORAGE_KEY) || '[]';
+                    if (JSON.stringify(remote) !== localJson) {
+                        _isSyncing = true;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+                        updateStats();
+                        renderActiveVisits();
+                        renderHistoryVisits();
+                        _isSyncing = false;
+                    }
+                }
+                setSyncStatus('online', 'Sincronizado');
+            } catch(e) {
+                console.error('Supabase pull error:', e);
+                setSyncStatus('error', 'Error al leer');
+            }
+        }
+
+        async function initSupabase() {
+            if (!SUPABASE_ENABLED) {
+                setSyncStatus('offline', 'Solo local');
+                return;
+            }
+            try {
+                setSyncStatus('syncing', 'Conectando...');
+                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // Carga inicial desde la nube
+                await pullFromSupabase();
+
+                // Escuchar cambios en tiempo real (Realtime)
+                _syncChannel = _supabase
+                    .channel('visitas-sync')
+                    .on('postgres_changes',
+                        { event: '*', schema: 'public', table: SUPABASE_TABLE },
+                        async (payload) => {
+                            // Otro dispositivo hizo un cambio — actualizamos
+                            if (!_isSyncing) await pullFromSupabase();
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            setSyncStatus('online', 'Sincronizado');
+                        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                            setSyncStatus('error', 'Sin conexión');
+                        }
+                    });
+            } catch(e) {
+                console.error('Supabase init error:', e);
+                setSyncStatus('error', 'Error Supabase');
+            }
+        }
+
         init();
+        initSupabase();
     </script>
 </body>
 </html>
