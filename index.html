@@ -1123,9 +1123,42 @@
             opacity: 0.6;
             letter-spacing: 0.3px;
         }
+
+        /* ── IMPRESIÓN ── */
+        #printContent { display: none; }
+        @media print {
+            body > *:not(#printContent) { display: none !important; }
+            #printContent {
+                display: block !important;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                color: #1a1a2e;
+                padding: 10px;
+                background: #fff;
+            }
+            #printContent .p-header { text-align:center; border-bottom:3px solid #dc2626; padding-bottom:10px; margin-bottom:14px; }
+            #printContent .p-company { font-size:16px; font-weight:800; color:#dc2626; }
+            #printContent .p-subtitle { font-size:10px; color:#555; margin-top:2px; text-transform:uppercase; letter-spacing:1px; }
+            #printContent .p-doctitle { font-size:12px; font-weight:700; margin-top:6px; color:#333; }
+            #printContent .p-status { display:inline-block; padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700; margin-bottom:12px; }
+            #printContent .p-status.done   { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+            #printContent .p-status.active { background:#fef3c7; color:#d97706; border:1px solid #fcd34d; }
+            #printContent .p-section { border:1px solid #e2e8f0; border-radius:6px; margin-bottom:10px; overflow:hidden; page-break-inside:avoid; }
+            #printContent .p-stitle { background:#f1f5f9; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; padding:6px 10px; border-bottom:1px solid #e2e8f0; }
+            #printContent .p-row { display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #f0f0f0; }
+            #printContent .p-row:last-child { border-bottom:none; }
+            #printContent .p-label { color:#718096; font-size:10px; }
+            #printContent .p-value { font-weight:600; font-size:10px; color:#1a1a2e; text-align:right; max-width:60%; }
+            #printContent .p-listrow { padding:6px 10px; border-bottom:1px solid #f0f0f0; font-size:10px; color:#1a1a2e; font-weight:600; }
+            #printContent .p-listrow:last-child { border-bottom:none; }
+            #printContent .p-footer { text-align:center; margin-top:14px; font-size:9px; color:#aaa; border-top:1px solid #eee; padding-top:8px; }
+        }
 </style>
 </head>
 <body>
+    <!-- Contenedor oculto para impresión -->
+    <div id="printContent"></div>
+
     <header class="header">
         <div class="header-top">
             <div class="logo">
@@ -1926,7 +1959,10 @@
         }
 
         function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            // ID numérico de 10 dígitos: segundos desde epoch + 4 aleatorios
+            var secs = Math.floor(Date.now() / 1000); // ~10 dígitos hasta 2286
+            var rand = Math.floor(1000 + Math.random() * 9000);
+            return String(secs) + String(rand);
         }
 
         function getFormattedDateTime() {
@@ -2328,94 +2364,78 @@
             if (v.almuerzo) comidas.push(formatComida('Almuerzo', v.almuerzoDesde, v.almuerzoHasta));
             if (v.cena)     comidas.push(formatComida('Cena',     v.cenaDesde,     v.cenaHasta));
 
-            // Crear un iframe oculto para imprimir (funciona en Android Chrome sin popups)
-            const existingFrame = document.getElementById('_printFrame');
-            if (existingFrame) existingFrame.remove();
+            // window.open disparado DIRECTAMENTE por el tap del usuario — Android Chrome lo permite
+            const w = window.open('', '_blank');
+            if (!w) {
+                showToast('⚠️ Activa "Ventanas emergentes" en Chrome para imprimir', 'error');
+                return;
+            }
+            w.document.write('<!DOCTYPE html><html lang="es"><head>' +
+                '<meta charset="UTF-8">' +
+                '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+                '<title>Registro ' + v.nombre + '</title>' +
+                '<style>' +
+                '*{margin:0;padding:0;box-sizing:border-box}' +
+                'body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a2e;padding:16px;background:#fff}' +
+                '.hdr{text-align:center;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:16px}' +
+                '.co{font-size:17px;font-weight:800;color:#dc2626}' +
+                '.sub{font-size:11px;color:#666;margin-top:3px;text-transform:uppercase;letter-spacing:1px}' +
+                '.dtl{font-size:13px;font-weight:700;margin-top:7px;color:#333}' +
+                '.badge{display:inline-block;padding:5px 16px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:16px}' +
+                '.ba{background:#fef3c7;color:#d97706;border:1px solid #fcd34d}' +
+                '.bd{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}' +
+                '.sec{border:1px solid #e2e8f0;border-radius:6px;margin-bottom:12px;overflow:hidden;page-break-inside:avoid}' +
+                '.st{background:#f1f5f9;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#64748b;padding:7px 12px;border-bottom:1px solid #e2e8f0}' +
+                '.row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 12px;border-bottom:1px solid #f0f0f0}' +
+                '.row:last-child{border-bottom:none}' +
+                '.lbl{color:#718096;font-size:11px;min-width:80px;flex-shrink:0}' +
+                '.val{font-weight:600;font-size:11px;text-align:right;color:#1a1a2e;word-break:break-word;max-width:65%}' +
+                '.ftr{text-align:center;margin-top:16px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px}' +
+                '.btn-p{display:block;width:100%;padding:12px;margin-bottom:16px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}' +
+                '@media print{.btn-p{display:none!important}body{padding:4px}}' +
+                '</style></head><body>' +
+                '<button class="btn-p" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>' +
+                '<div class="hdr"><div class="co">' + EMPRESA_NOMBRE + '</div>' +
+                '<div class="sub">' + EMPRESA_SUBTITULO + '</div>' +
+                '<div class="dtl">REGISTRO DE CONTROL DE ACCESO</div></div>' +
+                '<div style="text-align:center;margin-bottom:14px">' +
+                '<span class="badge ' + (isCompleted ? 'bd' : 'ba') + '">' + (isCompleted ? '✓ COMPLETADO' : '● ACTIVO — DENTRO') + '</span></div>' +
+                '<div class="sec"><div class="st">Datos Personales</div>' +
+                '<div class="row"><span class="lbl">Nombre</span><span class="val">' + v.nombre + '</span></div>' +
+                '<div class="row"><span class="lbl">DNI</span><span class="val">' + (v.dni || 'N/A') + '</span></div>' +
+                '<div class="row"><span class="lbl">Tipo</span><span class="val">' + (v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo') + '</span></div>' +
+                '<div class="row"><span class="lbl">Empresa</span><span class="val">' + (v.empresa || 'N/A') + '</span></div></div>' +
+                '<div class="sec"><div class="st">Ingreso</div>' +
+                '<div class="row"><span class="lbl">Fecha</span><span class="val">' + formatDate(v.fecha) + '</span></div>' +
+                '<div class="row"><span class="lbl">Hora</span><span class="val">' + v.horaIngreso + '</span></div>' +
+                '<div class="row"><span class="lbl">Motivo</span><span class="val">' + v.aQuienColaborador + '</span></div>' +
+                '<div class="row"><span class="lbl">Procedencia</span><span class="val">' + (v.quienAutoriza || 'N/A') + '</span></div>' +
+                (v.observaciones ? '<div class="row"><span class="lbl">Obs.</span><span class="val">' + v.observaciones + '</span></div>' : '') +
+                '</div>' +
+                '<div class="sec"><div class="st">Movilidad</div>' +
+                '<div class="row"><span class="lbl">Tipo</span><span class="val">' + movilLabel + '</span></div>' +
+                '<div class="row"><span class="lbl">Placa</span><span class="val">' + (v.placa || 'Sin placa') + '</span></div>' +
+                (v.hospedaje && v.hospedaje !== 'NO' ? '<div class="row"><span class="lbl">Hospedaje</span><span class="val">' + v.hospedaje + '</span></div>' : '') +
+                '</div>' +
+                (comidas.length > 0 ?
+                    '<div class="sec"><div class="st">Servicio de Comidas</div>' +
+                    comidas.map(function(c){ return '<div class="row"><span style="font-size:11px;font-weight:600;color:#1a1a2e;padding:2px 0">' + c + '</span></div>'; }).join('') +
+                    '</div>' : '') +
+                (isCompleted ?
+                    '<div class="sec"><div class="st">Salida</div>' +
+                    '<div class="row"><span class="lbl">Fecha</span><span class="val">' + formatDate(v.fechaSalida || v.fecha) + '</span></div>' +
+                    '<div class="row"><span class="lbl">Hora</span><span class="val">' + (v.horaSalida || 'N/A') + '</span></div>' +
+                    '<div class="row"><span class="lbl">Motivo</span><span class="val">' + (v.motivoSalida || 'N/A') + '</span></div>' +
+                    (v.observacionesSalida ? '<div class="row"><span class="lbl">Obs.</span><span class="val">' + v.observacionesSalida + '</span></div>' : '') +
+                    '</div>' : '') +
+                '<div class="ftr">Impreso: ' + new Date().toLocaleString('es-PE') + ' | ' + EMPRESA_NOMBRE + ' | ID: ' + v.id + '</div>' +
+                '</body></html>');
+            w.document.close();
+        }
 
-            const iframe = document.createElement('iframe');
-            iframe.id = '_printFrame';
-            iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;';
-            document.body.appendChild(iframe);
-
-            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Registro - ${v.nombre}</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a2e; padding: 20px; background:#fff; }
-  .header { text-align:center; border-bottom: 3px solid #dc2626; padding-bottom:12px; margin-bottom:16px; }
-  .company { font-size:17px; font-weight:800; color:#dc2626; }
-  .subtitle { font-size:11px; color:#666; margin-top:3px; text-transform:uppercase; letter-spacing:1px; }
-  .doc-title { font-size:13px; font-weight:700; margin-top:7px; color:#333; }
-  .status-bar { display:inline-block; padding:5px 16px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:16px; }
-  .status-active { background:#fef3c7; color:#d97706; border:1px solid #fcd34d; }
-  .status-done   { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
-  .section { border: 1px solid #e2e8f0; border-radius:6px; margin-bottom:12px; overflow:hidden; page-break-inside:avoid; }
-  .section-title { background:#f1f5f9; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; padding:7px 12px; border-bottom:1px solid #e2e8f0; }
-  .row { display:flex; justify-content:space-between; padding:7px 12px; border-bottom:1px solid #f0f0f0; }
-  .row:last-child { border-bottom:none; }
-  .label { color:#718096; font-size:11px; min-width:90px; }
-  .value { font-weight:600; font-size:11px; text-align:right; color:#1a1a2e; }
-  .footer { text-align:center; margin-top:16px; font-size:10px; color:#aaa; border-top:1px solid #eee; padding-top:10px; }
-  @media print { body { padding:8px; } }
-</style></head><body>
-<div class="header">
-  <div class="company">${EMPRESA_NOMBRE}</div>
-  <div class="subtitle">${EMPRESA_SUBTITULO}</div>
-  <div class="doc-title">REGISTRO DE CONTROL DE ACCESO</div>
-</div>
-<div style="text-align:center; margin-bottom:14px;">
-  <span class="status-bar ${isCompleted ? 'status-done' : 'status-active'}">${isCompleted ? '✓ COMPLETADO' : '● ACTIVO — DENTRO'}</span>
-</div>
-<div class="section">
-  <div class="section-title">Datos Personales</div>
-  <div class="row"><span class="label">Nombre</span><span class="value">${v.nombre}</span></div>
-  <div class="row"><span class="label">DNI</span><span class="value">${v.dni || 'N/A'}</span></div>
-  <div class="row"><span class="label">Tipo</span><span class="value">${v.tipoPersonal === 'PROPIO' ? 'Personal Propio' : 'Personal Externo'}</span></div>
-  <div class="row"><span class="label">Empresa</span><span class="value">${v.empresa || 'N/A'}</span></div>
-</div>
-<div class="section">
-  <div class="section-title">Ingreso</div>
-  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fecha)}</span></div>
-  <div class="row"><span class="label">Hora</span><span class="value">${v.horaIngreso}</span></div>
-  <div class="row"><span class="label">Motivo / Area</span><span class="value">${v.aQuienColaborador}</span></div>
-  <div class="row"><span class="label">Procedencia</span><span class="value">${v.quienAutoriza || 'N/A'}</span></div>
-  ${v.observaciones ? `<div class="row"><span class="label">Observaciones</span><span class="value">${v.observaciones}</span></div>` : ''}
-</div>
-<div class="section">
-  <div class="section-title">Movilidad</div>
-  <div class="row"><span class="label">Tipo</span><span class="value">${movilLabel}</span></div>
-  <div class="row"><span class="label">Placa</span><span class="value">${v.placa || 'Sin placa'}</span></div>
-  ${v.hospedaje && v.hospedaje !== 'NO' ? `<div class="row"><span class="label">Hospedaje</span><span class="value">${v.hospedaje}</span></div>` : ''}
-</div>
-${comidas.length > 0 ? `<div class="section"><div class="section-title">Servicio de Comidas</div>${comidas.map(c=>`<div class="row"><span class="label" style="min-width:unset;color:#1a1a2e;">${c}</span></div>`).join('')}</div>` : ''}
-${isCompleted ? `<div class="section"><div class="section-title">Salida</div>
-  <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(v.fechaSalida || v.fecha)}</span></div>
-  <div class="row"><span class="label">Hora</span><span class="value">${v.horaSalida || 'N/A'}</span></div>
-  <div class="row"><span class="label">Motivo</span><span class="value">${v.motivoSalida || 'N/A'}</span></div>
-  ${v.observacionesSalida ? `<div class="row"><span class="label">Observaciones</span><span class="value">${v.observacionesSalida}</span></div>` : ''}
-</div>` : ''}
-<div class="footer">Impreso: ${new Date().toLocaleString('es-PE')} &nbsp;|&nbsp; ${EMPRESA_NOMBRE} &nbsp;|&nbsp; ID: ${v.id}</div>
-</body></html>`;
-
-            // Usar Blob URL — más compatible con Android Chrome que srcdoc
-            const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-            const blobUrl = URL.createObjectURL(blob);
-
-            iframe.onload = () => {
-                try {
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-                } catch(e) {
-                    // Fallback: abrir en nueva pestaña para imprimir
-                    window.open(blobUrl, '_blank');
-                    showToast('📄 Abierto en nueva pestaña — usa Imprimir del navegador', 'success');
-                }
-                setTimeout(() => {
-                    iframe.remove();
-                    URL.revokeObjectURL(blobUrl);
-                }, 5000);
-            };
-            iframe.src = blobUrl;
+        function closePrintOverlay() {
+            const el = document.getElementById('_printOverlay');
+            if (el) el.remove();
         }
 
         // ===== GENERAR PDF REAL (jsPDF) =====
