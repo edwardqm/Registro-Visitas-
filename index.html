@@ -1311,64 +1311,6 @@
                     </select>
                 </div>
 
-                <div id="comidasSection">
-                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
-                        <span>🍽️</span>
-                        Servicio de comidas
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="desayuno" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍳 Desayuno</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="desayunoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="desayunoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="almuerzo" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍛 Almuerzo</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="almuerzoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="almuerzoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="cena" onchange="toggleComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍽️ Cena</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="cenaDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="cenaHasta">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <button type="submit" class="btn-primary">
                     <span>💾</span>
                     Guardar Registro
@@ -1733,64 +1675,6 @@
                         <option value="NO">❌ No</option>
                         <option value="SI">✅ Sí</option>
                     </select>
-                </div>
-
-                <div id="editComidasSection">
-                    <div class="form-title" style="margin-top:20px; margin-bottom:12px; font-size:16px;">
-                        <span>🍽️</span>
-                        Servicio de comidas
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="editDesayuno" onchange="toggleEditComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍳 Desayuno</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="editDesayunoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="editDesayunoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="editAlmuerzo" onchange="toggleEditComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍛 Almuerzo</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="editAlmuerzoDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="editAlmuerzoHasta">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="comida-row" style="background:var(--dark); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:10px; cursor:pointer;">
-                            <input type="checkbox" id="editCena" onchange="toggleEditComidaFields()" style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span>🍽️ Cena</span>
-                        </label>
-                        <div class="form-row" style="margin-bottom:0;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Desde</label>
-                                <input type="date" id="editCenaDesde">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:11px;">Hasta</label>
-                                <input type="date" id="editCenaHasta">
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="editSalidaSection" style="display:none;">
